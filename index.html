@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,6 +19,13 @@
             --warning-color: #f72585;
             --light-bg: #f8f9fa;
             --dark-bg: #212529;
+            
+            /* Color codes for dependency types */
+            --import-color: #4cc9f0;
+            --call-color: #4361ee;
+            --extend-color: #7209b7;
+            --reference-color: #f72585;
+            --define-color: #3a0ca3;
         }
 
         body {
@@ -106,108 +112,6 @@
             margin-right: 5px;
         }
 
-        .controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            width: 250px;
-            transition: width 0.3s ease, height 0.3s ease;
-        }
-
-        .controls.collapsed {
-            width: 42px;
-            height: 42px;
-            overflow: hidden;
-            padding: 10px;
-        }
-
-        .controls-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .controls-toggle {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-color);
-        }
-
-        .controls-toggle:hover {
-            color: var(--secondary-color);
-        }
-
-        .controls-content {
-            transition: opacity 0.3s ease;
-        }
-
-        .controls.collapsed .controls-content {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .controls.collapsed .controls-toggle i {
-            transform: rotate(180deg);
-        }
-
-        .control-group {
-            margin-bottom: 10px;
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            flex-direction: column;
-        }
-
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            color: var(--primary-color);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .node {
-            fill: var(--primary-color);
-            stroke: #fff;
-            stroke-width: 2px;
-            cursor: pointer;
-        }
-
-        .link {
-            stroke: #999;
-            stroke-opacity: 0.6;
-            stroke-width: 1.5px;
-        }
-
-        .node text {
-            pointer-events: none;
-            font-size: 10px;
-            fill: #333;
-        }
-
         .tooltip {
             position: absolute;
             background-color: white;
@@ -288,6 +192,87 @@
             color: var(--primary-color);
             font-weight: bold;
         }
+        
+        /* Graph legend */
+        .dependency-legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Zoom buttons */
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .zoom-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .zoom-button:hover {
+            background-color: #f0f0f0;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .node {
+            fill: var(--primary-color);
+            stroke: #fff;
+            stroke-width: 2px;
+            cursor: pointer;
+        }
+
+        .link {
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+        }
+
+        .node text {
+            pointer-events: none;
+            font-size: 10px;
+            fill: #333;
+        }
     </style>
 </head>
 <body>
@@ -299,6 +284,9 @@
                         <h1>Codebase Visualizer</h1>
                     </div>
                     <div class="col-auto">
+                        <button id="centerGraphBtn" class="btn btn-outline-light me-2">
+                            <i class="bi bi-bullseye"></i> Center Graph
+                        </button>
                         <input type="file" id="folderInput" webkitdirectory directory multiple class="d-none">
                         <button id="browseButton" class="btn btn-primary">
                             <i class="bi bi-folder"></i> Browse Files
@@ -330,61 +318,27 @@
 
             <section class="graph-container">
                 <div id="network-graph"></div>
-                <div class="controls" id="graphControls">
-                    <div class="controls-header">
-                        <h5 class="m-0">Graph Controls</h5>
-                        <button class="controls-toggle" id="controlsToggle">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div class="controls-content">
-                        <div class="control-group">
-                            <label for="nodeColorSelect" class="form-label">Node Color:</label>
-                            <select id="nodeColorSelect" class="form-select form-select-sm">
-                                <option value="#4361ee">Blue</option>
-                                <option value="#3a0ca3">Purple</option>
-                                <option value="#7209b7">Magenta</option>
-                                <option value="#f72585">Pink</option>
-                                <option value="#4cc9f0">Cyan</option>
-                                <option value="#480ca8">Deep Purple</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label for="linkColorSelect" class="form-label">Link Color:</label>
-                            <select id="linkColorSelect" class="form-select form-select-sm">
-                                <option value="#999">Gray</option>
-                                <option value="#000">Black</option>
-                                <option value="#4361ee">Blue</option>
-                                <option value="#3a0ca3">Purple</option>
-                                <option value="#7209b7">Magenta</option>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label for="nodeSize" class="form-label">Node Size: <span id="nodeSizeValue">10</span></label>
-                            <input type="range" class="form-range" id="nodeSize" min="5" max="20" value="10">
-                        </div>
-                        <div class="control-group">
-                            <button id="centerGraphBtn" class="btn btn-primary btn-sm">Center Graph</button>
-                            <button id="resetGraphBtn" class="btn btn-outline-secondary btn-sm ms-2">Reset</button>
-                        </div>
-                        <div class="control-group">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="showLabelsSwitch" checked>
-                                <label class="form-check-label" for="showLabelsSwitch">Show Labels</label>
-                            </div>
-                        </div>
-                        <div id="dependencyTypes" class="mt-3">
-                            <h6>Dependency Types:</h6>
-                            <div class="dependency-legend">
-                                <span class="badge bg-primary">Calls</span>
-                                <span class="badge bg-success">Imports/Requires</span>
-                                <span class="badge bg-info">Extends/Inherits</span>
-                                <span class="badge bg-warning">References</span>
-                                <span class="badge bg-danger">Defines</span>
-                            </div>
-                        </div>
+                
+                <div class="zoom-controls">
+                    <button id="zoomInBtn" class="zoom-button">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                    <button id="zoomOutBtn" class="zoom-button">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                </div>
+                
+                <div class="dependency-legend">
+                    <h6>Dependency Types:</h6>
+                    <div>
+                        <span class="badge" style="background-color: var(--call-color)">Calls</span>
+                        <span class="badge" style="background-color: var(--import-color)">Imports/Requires</span>
+                        <span class="badge" style="background-color: var(--extend-color)">Extends/Inherits</span>
+                        <span class="badge" style="background-color: var(--reference-color)">References</span>
+                        <span class="badge" style="background-color: var(--define-color)">Defines</span>
                     </div>
                 </div>
+                
                 <div id="tooltip" class="tooltip"></div>
                 <div id="loadingOverlay" class="loading-overlay hidden">
                     <div class="spinner-border" role="status">
@@ -411,6 +365,7 @@
         let fileTree = {};
         let selectedFolder = null;
         let simulation = null;
+        let zoomBehavior = null;
         
         // DOM elements
         const browseButton = document.getElementById('browseButton');
@@ -423,24 +378,14 @@
         const progressBar = document.getElementById('progressBar');
         const networkGraph = document.getElementById('network-graph');
         const tooltip = document.getElementById('tooltip');
-        const graphControls = document.getElementById('graphControls');
-        const controlsToggle = document.getElementById('controlsToggle');
-        
-        // Graph control elements
-        const nodeColorSelect = document.getElementById('nodeColorSelect');
-        const linkColorSelect = document.getElementById('linkColorSelect');
-        const nodeSizeSlider = document.getElementById('nodeSize');
-        const nodeSizeValue = document.getElementById('nodeSizeValue');
         const centerGraphBtn = document.getElementById('centerGraphBtn');
-        const resetGraphBtn = document.getElementById('resetGraphBtn');
-        const showLabelsSwitch = document.getElementById('showLabelsSwitch');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
         
         // Graph configuration
-        let graphConfig = {
-            nodeColor: nodeColorSelect.value,
-            linkColor: linkColorSelect.value,
-            nodeSize: parseInt(nodeSizeSlider.value),
-            showLabels: showLabelsSwitch.checked
+        const graphConfig = {
+            nodeSize: 10,
+            showLabels: true
         };
         
         // Initialize the application
@@ -453,24 +398,13 @@
             // File tree collapse functionality
             collapseButton.addEventListener('click', toggleFileTree);
             
-            // Graph controls collapse functionality
-            controlsToggle.addEventListener('click', toggleGraphControls);
-            
             // Graph control event listeners
-            nodeColorSelect.addEventListener('change', updateGraphStyle);
-            linkColorSelect.addEventListener('change', updateGraphStyle);
-            nodeSizeSlider.addEventListener('input', updateNodeSize);
             centerGraphBtn.addEventListener('click', centerGraph);
-            resetGraphBtn.addEventListener('click', resetGraph);
-            showLabelsSwitch.addEventListener('change', toggleLabels);
+            zoomInBtn.addEventListener('click', zoomIn);
+            zoomOutBtn.addEventListener('click', zoomOut);
             
             // Initialize an empty graph
             initializeGraph();
-        }
-        
-        // Toggle graph controls collapsed state
-        function toggleGraphControls() {
-            graphControls.classList.toggle('collapsed');
         }
         
         // Toggle file tree collapsed state
@@ -1065,15 +999,26 @@
             const svg = d3.select('#network-graph')
                 .append('svg')
                 .attr('width', '100%')
-                .attr('height', '100%')
-                .call(d3.zoom().on('zoom', (event) => {
-                    svg.attr('transform', event.transform);
-                }))
-                .append('g');
+                .attr('height', '100%');
+            
+            // Create zoom behavior
+            zoomBehavior = d3.zoom()
+                .scaleExtent([0.1, 3])
+                .on('zoom', (event) => {
+                    svg.select('g').attr('transform', event.transform);
+                });
+            
+            // Apply zoom behavior to SVG
+            svg.call(zoomBehavior);
+            
+            // Add container group that will be transformed
+            const g = svg.append('g');
             
             // Add markers for arrows
-            svg.append('defs').append('marker')
-                .attr('id', 'arrowhead')
+            svg.append('defs').selectAll('marker')
+                .data(['import', 'call', 'extend', 'reference', 'define', 'default'])
+                .enter().append('marker')
+                .attr('id', d => `arrowhead-${d}`)
                 .attr('viewBox', '-0 -5 10 10')
                 .attr('refX', 20)
                 .attr('refY', 0)
@@ -1083,8 +1028,16 @@
                 .attr('xoverflow', 'visible')
                 .append('svg:path')
                 .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
-                .attr('fill', '#999')
-                .style('stroke', 'none');
+                .attr('fill', d => {
+                    switch(d) {
+                        case 'import': return 'var(--import-color)';
+                        case 'call': return 'var(--call-color)';
+                        case 'extend': return 'var(--extend-color)';
+                        case 'reference': return 'var(--reference-color)';
+                        case 'define': return 'var(--define-color)';
+                        default: return '#999';
+                    }
+                });
             
             // Return the created SVG
             return svg;
@@ -1127,8 +1080,9 @@
             const nodesArray = Array.from(nodes.values());
             
             // Clear previous graph
-            const svg = d3.select('#network-graph').select('svg').select('g');
-            svg.selectAll('*').remove();
+            const svg = d3.select('#network-graph').select('svg');
+            const g = svg.select('g');
+            g.selectAll('*').remove();
             
             // Create the simulation
             simulation = d3.forceSimulation(nodesArray)
@@ -1141,21 +1095,18 @@
                 .force('collision', d3.forceCollide().radius(30));
             
             // Draw links first so they appear behind nodes
-            const link = svg.append('g')
+            const link = g.append('g')
                 .attr('class', 'links')
                 .selectAll('line')
                 .data(links)
                 .enter().append('line')
                 .attr('class', 'link')
                 .attr('stroke', getLinkColor)
-                .attr('marker-end', 'url(#arrowhead)');
-            
-            // Update arrowhead color
-            svg.select('#arrowhead path')
-                .attr('fill', graphConfig.linkColor);
+                .attr('stroke-width', 1.5)
+                .attr('marker-end', d => `url(#arrowhead-${d.type || 'default'})`);
             
             // Draw nodes
-            const node = svg.append('g')
+            const node = g.append('g')
                 .attr('class', 'nodes')
                 .selectAll('g')
                 .data(nodesArray)
@@ -1164,7 +1115,7 @@
             // Add circles to each node
             node.append('circle')
                 .attr('class', 'node')
-                .attr('r', getNodeRadius)
+                .attr('r', graphConfig.nodeSize)
                 .attr('fill', getNodeColor)
                 .on('mouseover', showNodeTooltip)
                 .on('mouseout', hideTooltip)
@@ -1202,7 +1153,14 @@
         
         // Get node color based on file type
         function getNodeColor(d) {
-            return graphConfig.nodeColor;
+            switch(d.group) {
+                case 1: return '#4361ee'; // JS
+                case 2: return '#3a0ca3'; // TS
+                case 3: return '#7209b7'; // CSS
+                case 4: return '#4cc9f0'; // HTML
+                case 5: return '#f72585'; // JSON
+                default: return '#6c757d'; // Others
+            }
         }
         
         // Get node radius based on importance
@@ -1214,17 +1172,17 @@
         function getLinkColor(d) {
             switch (d.type) {
                 case 'import':
-                    return '#4cc9f0';
+                    return 'var(--import-color)';
                 case 'call':
-                    return '#4361ee';
+                    return 'var(--call-color)';
                 case 'extend':
-                    return '#7209b7';
+                    return 'var(--extend-color)';
                 case 'reference':
-                    return '#f72585';
+                    return 'var(--reference-color)';
                 case 'define':
-                    return '#3a0ca3';
+                    return 'var(--define-color)';
                 default:
-                    return graphConfig.linkColor;
+                    return '#999';
             }
         }
         
@@ -1370,60 +1328,12 @@
             d.fy = null;
         }
         
-        // Update graph styles
-        function updateGraphStyle() {
-            // Update graph configuration with current select values
-            graphConfig.nodeColor = nodeColorSelect.value;
-            graphConfig.linkColor = linkColorSelect.value;
-            
-            // Apply colors immediately to graph elements
-            d3.selectAll('.node')
-                .attr('fill', getNodeColor);
-            
-            d3.selectAll('.link')
-                .attr('stroke', function(d) {
-                    // Only apply linkColor to links that don't have specific type colors
-                    if (d.type && ['import', 'call', 'extend', 'reference', 'define'].includes(d.type)) {
-                        return getLinkColor(d);
-                    }
-                    return graphConfig.linkColor;
-                });
-            
-            // Update arrowhead color
-            d3.select('#arrowhead path')
-                .attr('fill', graphConfig.linkColor);
-                
-            // Force a simulation restart to apply changes
-            if (simulation) {
-                simulation.alpha(0.1).restart();
-            }
-        }
-        
-        // Update node size
-        function updateNodeSize() {
-            graphConfig.nodeSize = parseInt(nodeSizeSlider.value);
-            nodeSizeValue.textContent = graphConfig.nodeSize;
-            
-            d3.selectAll('.node')
-                .attr('r', getNodeRadius);
-            
-            // Force a simulation restart
-            if (simulation) {
-                simulation.alpha(0.1).restart();
-            }
-        }
-        
         // Center the graph visualization
         function centerGraph() {
             const svg = d3.select('#network-graph').select('svg');
             
-            const zoom = d3.zoom()
-                .on('zoom', (event) => {
-                    svg.select('g').attr('transform', event.transform);
-                });
-            
             svg.transition().duration(750).call(
-                zoom.transform,
+                zoomBehavior.transform,
                 d3.zoomIdentity.translate(
                     networkGraph.clientWidth / 2,
                     networkGraph.clientHeight / 2
@@ -1431,33 +1341,22 @@
             );
         }
         
-        // Reset graph settings and position
-        function resetGraph() {
-            // Reset graph config
-            nodeColorSelect.value = '#4361ee';
-            linkColorSelect.value = '#999';
-            nodeSizeSlider.value = 10;
-            nodeSizeValue.textContent = 10;
-            showLabelsSwitch.checked = true;
-            
-            graphConfig = {
-                nodeColor: '#4361ee',
-                linkColor: '#999',
-                nodeSize: 10,
-                showLabels: true
-            };
-            
-            // Redraw the graph
-            updateGraph();
-            
-            // Center the graph
-            centerGraph();
+        // Zoom in
+        function zoomIn() {
+            const svg = d3.select('#network-graph').select('svg');
+            svg.transition().duration(300).call(
+                zoomBehavior.scaleBy, 
+                1.3
+            );
         }
         
-        // Toggle labels
-        function toggleLabels() {
-            graphConfig.showLabels = showLabelsSwitch.checked;
-            updateGraph();
+        // Zoom out
+        function zoomOut() {
+            const svg = d3.select('#network-graph').select('svg');
+            svg.transition().duration(300).call(
+                zoomBehavior.scaleBy, 
+                0.7
+            );
         }
         
         // Export dependencies to CSV
