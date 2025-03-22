@@ -2,68 +2,108 @@
 
 ## Project info
 
-**URL**: https://codebase-visualization-graph.lovable.app/
+**URL**: https://kartikshankar-nyc.github.io/codebase-visualization-graph/
 
-## How can I edit this code?
+# Codebase Visualization Graph
 
-There are several ways of editing your application.
+The "Codebase Visualization Graph" application is designed to visualize the structure and dependencies of your codebase. This guide will help you get started with using the application effectively.
 
-**Use Lovable**
+```markdown
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/55e10912-a5d6-4685-b900-c748a1bbfb82) and start prompting.
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Using the Application](#using-the-application)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Prerequisites
+Before you begin, ensure you have met the following requirements:
+- You have installed [Node.js](https://nodejs.org/) (version 14 or higher).
+- You have a codebase that you want to visualize.
 
-**Use your preferred IDE**
+## Installation
+To install the application, follow these steps:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/kartikshankar-nyc/codebase-visualization-graph.git
+    cd codebase-visualization-graph
+    ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install the dependencies:
+    ```bash
+    npm install
+    ```
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Running the Application
+To run the application, use the following command:
+```bash
+npm start
 ```
 
-**Edit a file directly in GitHub**
+This will start the application on the default port (e.g., `http://localhost:3000`).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Using the Application
+Once the application is running, you can use it as follows:
 
-**Use GitHub Codespaces**
+1. Open your web browser and navigate to `http://localhost:3000`.
+2. You will see the main interface of the Codebase Visualization Graph.
+3. Upload your codebase or specify the path to the codebase you want to visualize.
+4. The application will analyze the codebase and generate a visual representation of the structure and dependencies.
+5. Use the interactive graph to explore the relationships between different parts of your codebase.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Configuration
+The application provides several configuration options to customize its behavior. You can modify these settings in the `config.json` file located in the root directory of the repository.
 
-## What technologies are used for this project?
+Example configuration:
+```json
+{
+  "port": 3000,
+  "analyzeExtensions": [".ts", ".tsx", ".js", ".jsx"],
+  "exclude": ["node_modules", "dist"]
+}
+```
 
-This project is built with .
+- `port`: The port number on which the application will run.
+- `analyzeExtensions`: An array of file extensions to include in the analysis.
+- `exclude`: An array of directories or files to exclude from the analysis.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Troubleshooting
+If you encounter any issues, check the following:
 
-## How can I deploy this project?
+- Ensure that all prerequisites are met.
+- Verify that you have installed all dependencies.
+- Check the application logs for any error messages.
+- Consult the [Issues](https://github.com/kartikshankar-nyc/codebase-visualization-graph/issues) section on GitHub for similar problems and possible solutions.
 
-Simply open [Lovable](https://lovable.dev/projects/55e10912-a5d6-4685-b900-c748a1bbfb82) and click on Share -> Publish.
+## Contributing
+Contributions are welcome! To contribute, follow these steps:
 
-## I want to use a custom domain - is that possible?
+1. Fork the repository.
+2. Create a new feature branch:
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+3. Commit your changes:
+    ```bash
+    git commit -m 'Add some feature'
+    ```
+4. Push to the branch:
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+5. Open a pull request.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+Feel free to reach out via the [GitHub Issues](https://github.com/kartikshankar-nyc/codebase-visualization-graph/issues) if you have any questions or need further assistance. Happy coding!
+```
+
+You can now copy and paste this markdown content into your `README.md` file.
