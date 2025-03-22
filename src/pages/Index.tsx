@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
@@ -919,3 +920,94 @@ const Index = () => {
           
           {/* File tree content */}
           <div className="flex-grow overflow-y-auto p-2 file-tree">
+            {filteredTree ? (
+              <FileTreeItem item={filteredTree} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderOpen size={32} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No files to display</p>
+                <p className="text-xs mt-1">Select a folder to visualize</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Graph visualization */}
+        <div className="flex-grow relative" ref={reactFlowWrapper}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onInit={onInit}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.1}
+            maxZoom={2}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={12}
+              size={1}
+              color="hsl(var(--border))"
+            />
+            <Controls className="bg-background border border-border rounded-md shadow-sm" />
+            <MiniMap
+              className="bg-card border border-border rounded-md shadow-sm"
+              maskColor="rgba(240, 240, 240, 0.5)"
+              nodeColor={(node) => {
+                if (node.data?.type === 'file') return 'hsl(var(--primary) / 0.3)';
+                return 'hsl(var(--muted) / 0.3)';
+              }}
+            />
+            
+            <Panel position="top-right" className="space-x-2">
+              <button
+                className="p-2 bg-background text-foreground border border-border rounded-md hover:bg-secondary transition-colors"
+                onClick={centerGraph}
+                title="Center Graph"
+              >
+                <RefreshCw size={16} />
+              </button>
+              <button
+                className="p-2 bg-background text-foreground border border-border rounded-md hover:bg-secondary transition-colors"
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                title="Visualization Settings"
+              >
+                <Settings size={16} />
+              </button>
+              <button
+                className="p-2 bg-background text-foreground border border-border rounded-md hover:bg-secondary transition-colors"
+                onClick={exportDependencies}
+                title="Export Dependencies"
+              >
+                <Download size={16} />
+              </button>
+            </Panel>
+            
+            {isSettingsOpen && (
+              <Panel position="top-center">
+                <SettingsPanel />
+              </Panel>
+            )}
+          </ReactFlow>
+          
+          {isLoading && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
+              <div className="text-center p-6 rounded-lg">
+                <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full mx-auto mb-4"></div>
+                <p className="font-medium">Processing...</p>
+                <p className="text-sm text-muted-foreground mt-1">Analyzing codebase structure</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
