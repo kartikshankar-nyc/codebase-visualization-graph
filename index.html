@@ -273,6 +273,25 @@
             font-size: 10px;
             fill: #333;
         }
+
+        /* Node highlighting */
+        .node.highlighted {
+            stroke: #f72585;
+            stroke-width: 3px;
+        }
+        
+        .link.highlighted {
+            stroke-opacity: 1;
+            stroke-width: 2.5px;
+        }
+        
+        .link.dimmed {
+            stroke-opacity: 0.1;
+        }
+        
+        .node.dimmed {
+            opacity: 0.3;
+        }
     </style>
 </head>
 <body>
@@ -1119,6 +1138,7 @@
                 .attr('fill', getNodeColor)
                 .on('mouseover', showNodeTooltip)
                 .on('mouseout', hideTooltip)
+                .on('click', handleNodeClick) // Add click handler for highlighting
                 .call(d3.drag()
                     .on('start', dragStarted)
                     .on('drag', dragging)
@@ -1148,6 +1168,127 @@
                 
                 node
                     .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+            
+            // Setup background click to clear highlighting
+            setupBackgroundClick();
+        }
+        
+        // Handle node click for highlighting dependencies
+        function handleNodeClick(event, d) {
+            event.stopPropagation(); // Prevent event bubbling
+            
+            // Check if we're clearing a previous highlight
+            const currentHighlight = d3.select('#network-graph').select('.node.highlighted');
+            if (currentHighlight.size() > 0 && currentHighlight.datum().id === d.id) {
+                // Clicked the same node again, clear highlighting
+                clearHighlighting();
+                return;
+            }
+            
+            // Clear any existing highlighting
+            clearHighlighting();
+            
+            // Find all dependencies and dependents
+            const relatedNodes = findRelatedNodes(d.id);
+            
+            // Highlight the node and its connections
+            highlightRelatedNodes(d.id, relatedNodes);
+        }
+        
+        // Find all nodes related to the clicked node
+        function findRelatedNodes(nodeId) {
+            const dependsOn = new Set(); // Nodes that the clicked node depends on
+            const dependedBy = new Set(); // Nodes that depend on the clicked node
+            
+            // Find dependencies from the global dependencies array
+            dependencies.forEach(dep => {
+                if (dep.source === nodeId) {
+                    dependsOn.add(dep.target);
+                }
+                if (dep.target === nodeId) {
+                    dependedBy.add(dep.source);
+                }
+            });
+            
+            return { dependsOn, dependedBy };
+        }
+        
+        // Highlight the node and its related nodes/links
+        function highlightRelatedNodes(nodeId, relatedNodes) {
+            const svg = d3.select('#network-graph').select('svg');
+            const { dependsOn, dependedBy } = relatedNodes;
+            
+            // Create a set of all relevant node IDs
+            const relevantNodeIds = new Set([nodeId, ...dependsOn, ...dependedBy]);
+            
+            // Dim all nodes and links
+            svg.selectAll('.node').classed('dimmed', true);
+            svg.selectAll('.link').classed('dimmed', true);
+            
+            // Highlight the selected node
+            svg.selectAll('.node')
+                .filter(d => d.id === nodeId)
+                .classed('highlighted', true)
+                .classed('dimmed', false);
+            
+            // Highlight relevant nodes
+            svg.selectAll('.node')
+                .filter(d => relevantNodeIds.has(d.id) && d.id !== nodeId)
+                .classed('dimmed', false);
+            
+            // Highlight relevant links
+            svg.selectAll('.link')
+                .filter(d => {
+                    // Highlight links where either source or target is the clicked node
+                    // AND the other end is in the relevant nodes set
+                    if (d.source.id === nodeId && dependsOn.has(d.target.id)) return true;
+                    if (d.target.id === nodeId && dependedBy.has(d.source.id)) return true;
+                    return false;
+                })
+                .classed('highlighted', true)
+                .classed('dimmed', false);
+                
+            // Also highlight in the file tree
+            highlightNodeInTree(nodeId.split('/').pop());
+        }
+        
+        // Clear highlighting
+        function clearHighlighting() {
+            const svg = d3.select('#network-graph').select('svg');
+            
+            // Remove highlighting and dimming classes
+            svg.selectAll('.node')
+                .classed('highlighted', false)
+                .classed('dimmed', false);
+                
+            svg.selectAll('.link')
+                .classed('highlighted', false)
+                .classed('dimmed', false);
+                
+            // Clear tree highlighting
+            const treeNodes = document.querySelectorAll('.tree-node');
+            treeNodes.forEach(node => {
+                node.style.backgroundColor = '';
+            });
+        }
+        
+        // Highlight node in the file tree
+        function highlightNodeInTree(nodeName) {
+            const treeNodes = document.querySelectorAll('.tree-node');
+            treeNodes.forEach(node => {
+                if (node.textContent.includes(nodeName)) {
+                    node.style.backgroundColor = 'rgba(247, 37, 133, 0.2)';
+                } else {
+                    node.style.backgroundColor = '';
+                }
+            });
+        }
+        
+        // Click on empty space to clear highlighting
+        function setupBackgroundClick() {
+            d3.select('#network-graph').select('svg').on('click', () => {
+                clearHighlighting();
             });
         }
         
@@ -1275,6 +1416,9 @@
         
         // Highlight node in graph
         function highlightNodeInGraph(nodeName) {
+            // Clear any existing highlighting first
+            clearHighlighting();
+            
             // Find nodes containing the name
             const nodes = d3.selectAll('.node');
             const matchingNodes = [];
@@ -1282,6 +1426,9 @@
             nodes.each(function(d) {
                 if (d.name.includes(nodeName)) {
                     matchingNodes.push(this);
+                    
+                    // Also trigger the node click handler to show dependencies
+                    handleNodeClick({stopPropagation: () => {}}, d);
                 }
             });
             
@@ -1296,16 +1443,6 @@
                         .attr('stroke-width', 3)
                         .attr('stroke', '#f72585')
                         .attr('r', graphConfig.nodeSize * 1.5);
-                });
-                
-                // Also highlight in tree
-                const treeNodes = document.querySelectorAll('.tree-node');
-                treeNodes.forEach(node => {
-                    if (node.textContent.includes(nodeName)) {
-                        node.style.backgroundColor = 'rgba(247, 37, 133, 0.2)';
-                    } else {
-                        node.style.backgroundColor = '';
-                    }
                 });
             }
         }
