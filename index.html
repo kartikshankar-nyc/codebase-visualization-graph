@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1371,6 +1372,7 @@
         
         // Update graph styles
         function updateGraphStyle() {
+            // Update graph configuration with current select values
             graphConfig.nodeColor = nodeColorSelect.value;
             graphConfig.linkColor = linkColorSelect.value;
             
@@ -1379,7 +1381,13 @@
                 .attr('fill', getNodeColor);
             
             d3.selectAll('.link')
-                .attr('stroke', getLinkColor);
+                .attr('stroke', function(d) {
+                    // Only apply linkColor to links that don't have specific type colors
+                    if (d.type && ['import', 'call', 'extend', 'reference', 'define'].includes(d.type)) {
+                        return getLinkColor(d);
+                    }
+                    return graphConfig.linkColor;
+                });
             
             // Update arrowhead color
             d3.select('#arrowhead path')
@@ -1398,6 +1406,11 @@
             
             d3.selectAll('.node')
                 .attr('r', getNodeRadius);
+            
+            // Force a simulation restart
+            if (simulation) {
+                simulation.alpha(0.1).restart();
+            }
         }
         
         // Center the graph visualization
