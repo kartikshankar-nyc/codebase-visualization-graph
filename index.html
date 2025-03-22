@@ -2,1485 +2,966 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Codebase Visualizer - Explore your code dependencies</title>
-  <meta name="description" content="Visualize your codebase structure and dependencies with an elegant interactive graph" />
-  <meta name="author" content="Lovable" />
-
-  <meta property="og:title" content="Codebase Visualizer" />
-  <meta property="og:description" content="Visualize your codebase structure and dependencies with an elegant interactive graph" />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@lovable_dev" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  
-  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
-  <!-- CDN Dependencies -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/reactflow@11.7.2/dist/reactflow.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sonner@0.5.0/dist/index.umd.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/reactflow@11.7.2/dist/style.css" rel="stylesheet">
-  
-  <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-  <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard App</title>
+  <!-- Bootstrap CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Custom CSS -->
   <style>
-    /* Base styles */
     :root {
-      --background: 210 33% 99%;
-      --foreground: 220 20% 16%;
-      --card: 0 0% 100%;
-      --card-foreground: 220 20% 16%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 220 20% 16%;
-      --primary: 211 100% 50%;
-      --primary-foreground: 0 0% 100%;
-      --secondary: 210 20% 96%;
-      --secondary-foreground: 220 20% 16%;
-      --muted: 210 20% 96%;
-      --muted-foreground: 220 20% 46%;
-      --accent: 210 20% 96%;
-      --accent-foreground: 220 20% 16%;
-      --destructive: 0 84% 60%;
-      --destructive-foreground: 0 0% 100%;
-      --border: 214 32% 91%;
-      --input: 214 32% 91%;
-      --ring: 221 83% 53%;
-      --radius: 0.75rem;
-      --sidebar-background: 0 0% 100%;
-      --sidebar-foreground: 220 20% 16%;
-      --sidebar-primary: 211 100% 50%;
-      --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 210 20% 96%;
-      --sidebar-accent-foreground: 220 20% 16%;
-      --sidebar-border: 214 32% 91%;
-      --sidebar-ring: 221 83% 53%;
-    }
-
-    .dark {
-      --background: 220 20% 16%;
-      --foreground: 210 20% 98%;
-      --card: 220 20% 18%;
-      --card-foreground: 210 20% 98%;
-      --popover: 220 20% 18%;
-      --popover-foreground: 210 20% 98%;
-      --primary: 211 100% 50%;
-      --primary-foreground: 0 0% 100%;
-      --secondary: 216 28% 12%;
-      --secondary-foreground: 210 20% 98%;
-      --muted: 216 28% 12%;
-      --muted-foreground: 215 20% 65%;
-      --accent: 216 28% 12%;
-      --accent-foreground: 210 20% 98%;
-      --destructive: 0 62% 30%;
-      --destructive-foreground: 210 20% 98%;
-      --border: 216 28% 21%;
-      --input: 216 28% 21%;
-      --ring: 211 100% 50%;
-      --sidebar-background: 220 20% 18%;
-      --sidebar-foreground: 210 20% 98%;
-      --sidebar-primary: 211 100% 50%;
-      --sidebar-primary-foreground: 0 0% 100%;
-      --sidebar-accent: 216 28% 12%;
-      --sidebar-accent-foreground: 210 20% 98%;
-      --sidebar-border: 216 28% 21%;
-      --sidebar-ring: 211 100% 50%;
-    }
-
-    * {
-      border-color: hsl(var(--border));
+      --primary: #8B5CF6;
+      --primary-hover: #7C3AED;
+      --background: #FFFFFF;
+      --foreground: #333333;
+      --muted: #F3F4F6;
+      --muted-foreground: #71717A;
+      --border: #E5E7EB;
+      --sidebar-bg: #F9FAFB;
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --content-padding: 1.5rem;
     }
 
     body {
-      background-color: hsl(var(--background));
-      color: hsl(var(--foreground));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--background);
+      margin: 0;
+      padding: 0;
+      color: var(--foreground);
+      overflow-x: hidden;
     }
 
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+    .app-container {
+      display: flex;
+      min-height: 100vh;
     }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
+    /* Sidebar styles */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      transition: width 0.3s ease;
+      overflow-x: hidden;
+      z-index: 100;
     }
 
-    ::-webkit-scrollbar-thumb {
-      background: hsla(var(--muted-foreground), 0.3);
-      border-radius: 4px;
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
     }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: hsla(var(--muted-foreground), 0.5);
+    .sidebar-header {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
     }
 
-    /* Animations for nodes and edges */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
     }
 
-    @keyframes scaleIn {
-      from { transform: scale(0.9); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+    .sidebar-toggle {
+      cursor: pointer;
+      color: var(--muted-foreground);
+      background: none;
+      border: none;
+      padding: 5px;
     }
 
-    @keyframes slideUp {
-      from { transform: translateY(10px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .sidebar-menu {
+      padding: 1rem 0;
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 hsla(var(--primary), 0.3); }
-      70% { box-shadow: 0 0 0 10px hsla(var(--primary), 0); }
-      100% { box-shadow: 0 0 0 0 hsla(var(--primary), 0); }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: background-color 0.2s ease;
     }
 
-    .scale-in {
-      animation: scaleIn 0.4s ease-out forwards;
+    .menu-item:hover {
+      background-color: var(--muted);
     }
 
-    .slide-up {
-      animation: slideUp 0.4s ease-out forwards;
+    .menu-item.active {
+      background-color: rgba(139, 92, 246, 0.1);
+      color: var(--primary);
+      font-weight: 500;
     }
 
-    .fade-in {
-      animation: fadeIn 0.4s ease-out forwards;
+    .menu-item i {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+      min-width: 1.25rem;
+      text-align: center;
     }
 
-    .pulse {
-      animation: pulse 2s infinite;
+    .menu-text {
+      white-space: nowrap;
     }
 
-    /* Flow related styles */
-    .react-flow__edge-path {
-      stroke-width: 1.5;
-      stroke: hsla(var(--muted-foreground), 0.6);
-    }
-
-    .react-flow__edge-text {
-      font-size: 10px;
-      fill: hsl(var(--foreground));
-    }
-
-    .react-flow__edge.selected .react-flow__edge-path {
-      stroke: hsl(var(--primary));
-      stroke-width: 2;
-    }
-
-    .react-flow__handle {
-      width: 8px;
-      height: 8px;
-      background-color: hsl(var(--background));
-      border: 1.5px solid hsl(var(--primary));
-    }
-
-    .react-flow__handle:hover {
-      background-color: hsl(var(--primary));
-    }
-
-    .react-flow__attribution {
+    .sidebar.collapsed .menu-text,
+    .sidebar.collapsed .logo-text {
       display: none;
     }
 
-    .react-flow__controls {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      border-radius: 8px;
-      padding: 6px;
-      background: hsl(var(--background));
-      border: 1px solid hsl(var(--border));
+    /* Main content styles */
+    .main-content {
+      flex: 1;
+      padding: var(--content-padding);
+      transition: margin-left 0.3s ease;
+      width: calc(100% - var(--sidebar-width));
     }
 
-    .react-flow__controls-button {
-      border-radius: 6px;
-      padding: 4px;
-      background: transparent;
-      color: hsl(var(--foreground));
+    .sidebar.collapsed ~ .main-content {
+      width: calc(100% - var(--sidebar-collapsed-width));
     }
 
-    .react-flow__controls-button:hover {
-      background: hsl(var(--secondary));
+    /* Card styles */
+    .card {
+      background: var(--background);
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.5rem;
     }
 
-    /* File tree styles */
-    .file-tree {
-      user-select: none;
-    }
-
-    .file-tree-item {
-      transition: background-color 0.2s;
-    }
-
-    .file-tree-item:hover {
-      background-color: hsl(var(--secondary));
-    }
-
-    .file-tree-item.selected {
-      background-color: hsla(var(--primary), 0.1);
-      color: hsl(var(--primary));
-    }
-
-    /* Glass panel styles */
-    .glass-panel {
-      background: hsla(var(--card), 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid hsla(var(--border), 0.5);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
-    }
-
-    /* Lazy load transition */
-    .lazy-image {
-      filter: blur(20px);
-      transition: filter 0.5s ease-out;
-    }
-
-    .lazy-image.loaded {
-      filter: blur(0);
-    }
-
-    /* Node styles */
-    .node {
-      border-radius: 8px;
-      background-color: hsl(var(--card));
-      border: 1px solid hsl(var(--border));
-      padding: 12px 16px;
-      font-size: 12px;
-      min-width: 150px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s ease;
-    }
-
-    .node:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .node.file-node {
-      background-color: hsl(var(--card));
-    }
-
-    .node.folder-node {
-      background-color: hsla(var(--primary), 0.05);
-    }
-
-    .node.component-node {
-      background-color: hsla(var(--accent), 0.7);
-    }
-
-    .node.function-node {
-      border-left: 3px solid hsl(var(--primary));
-    }
-
-    .node.variable-node {
-      border-left: 3px solid hsl(48, 100%, 67%);
-    }
-
-    .node.class-node {
-      border-left: 3px solid hsl(275, 80%, 71%);
-    }
-
-    .node-header {
-      font-weight: 500;
-      font-size: 14px;
-      margin-bottom: 8px;
+    .card-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
     }
 
-    .node-type {
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background-color: hsl(var(--secondary));
-      color: hsl(var(--secondary-foreground));
+    .card-body {
+      padding: 1rem;
     }
 
-    /* Tooltips */
-    .custom-tooltip {
-      background-color: hsl(var(--popover));
-      color: hsl(var(--popover-foreground));
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      border: 1px solid hsl(var(--border));
-      max-width: 300px;
+    .card-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Button styles */
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--foreground);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--muted);
+    }
+
+    /* Grid layout */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.5rem;
+    }
+
+    .col-span-4 {
+      grid-column: span 4;
+    }
+
+    .col-span-6 {
+      grid-column: span 6;
+    }
+
+    .col-span-8 {
+      grid-column: span 8;
+    }
+
+    .col-span-12 {
+      grid-column: span 12;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+      .col-span-4, .col-span-6, .col-span-8 {
+        grid-column: span 12;
+      }
+      
+      .sidebar {
+        position: fixed;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        width: 100%;
+      }
+      
+      .mobile-sidebar-toggle {
+        display: block;
+      }
+    }
+
+    @media (min-width: 993px) {
+      .mobile-sidebar-toggle {
+        display: none;
+      }
+      
+      .sidebar {
+        transform: translateX(0);
+      }
+    }
+
+    /* Data visualization styles */
+    .progress-container {
+      margin-bottom: 1rem;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress {
+      height: 0.75rem;
+      background-color: var(--muted);
+      border-radius: 1rem;
+    }
+
+    .progress-bar {
+      background-color: var(--primary);
+      border-radius: 1rem;
+    }
+
+    /* Form styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      background-color: var(--background);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+    }
+
+    /* Chart placeholder */
+    .chart-placeholder {
+      width: 100%;
+      height: 250px;
+      background-color: var(--muted);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+    }
+
+    /* Table styles */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table th {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+    }
+
+    .table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: rgb(34, 197, 94);
+    }
+
+    .badge-warning {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: rgb(245, 158, 11);
+    }
+
+    .badge-danger {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: rgb(239, 68, 68);
+    }
+
+    /* Calendar styles */
+    .calendar {
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 0.5rem;
+    }
+
+    .calendar-day {
+      text-align: center;
+      padding: 0.5rem;
+      cursor: pointer;
+    }
+
+    .calendar-day:hover {
+      background-color: var(--muted);
+      border-radius: 0.25rem;
+    }
+
+    .calendar-day.today {
+      background-color: var(--primary);
+      color: white;
+      border-radius: 0.25rem;
+    }
+
+    /* Toast notification */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
       z-index: 1000;
     }
 
-    /* App structure */
-    .app {
-      min-height: 100vh;
+    .toast {
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 350px;
+    }
+
+    .toast-header {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
     }
 
-    .header {
-      background-color: hsl(var(--card));
-      border-bottom: 1px solid hsl(var(--border));
-      padding: 0.75rem 1.5rem;
+    .toast-title {
+      font-weight: 600;
     }
 
-    .sidebar {
-      width: 20rem;
-      border-right: 1px solid hsl(var(--border));
-      background-color: hsl(var(--card));
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .content {
-      flex-grow: 1;
-      display: flex;
-    }
-
-    .graph-container {
-      flex-grow: 1;
-      position: relative;
+    .toast-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted-foreground);
     }
   </style>
+  <!-- Required Script for GPT Engineer -->
+  <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
 </head>
 <body>
-  <div id="root"></div>
-  
-  <!-- Toast Container -->
-  <div id="toast-container"></div>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="bi bi-grid-1x2-fill"></i>
+          <span class="logo-text">Dashboard</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+      </div>
+      <nav class="sidebar-menu">
+        <a href="#" class="menu-item active">
+          <i class="bi bi-house-door"></i>
+          <span class="menu-text">Dashboard</span>
+        </a>
+        <a href="#" class="menu-item">
+          <i class="bi bi-bar-chart"></i>
+          <span class="menu-text">Analytics</span>
+        </a>
+        <a href="#" class="menu-item">
+          <i class="bi bi-people"></i>
+          <span class="menu-text">Users</span>
+        </a>
+        <a href="#" class="menu-item">
+          <i class="bi bi-calendar"></i>
+          <span class="menu-text">Calendar</span>
+        </a>
+        <a href="#" class="menu-item">
+          <i class="bi bi-gear"></i>
+          <span class="menu-text">Settings</span>
+        </a>
+      </nav>
+    </aside>
 
+    <!-- Main Content -->
+    <main class="main-content">
+      <button class="btn btn-outline mobile-sidebar-toggle" id="mobileSidebarToggle">
+        <i class="bi bi-list"></i>
+      </button>
+      
+      <div class="mb-4">
+        <h1>Dashboard</h1>
+        <p class="text-muted">Welcome back! Here's an overview of your account.</p>
+      </div>
+      
+      <!-- Stats Cards -->
+      <div class="grid">
+        <div class="col-span-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <i class="bi bi-person text-primary" style="font-size: 2rem;"></i>
+              <h3 class="mt-2">2,457</h3>
+              <p class="text-muted">Total Users</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-span-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+              <h3 class="mt-2">$24,568</h3>
+              <p class="text-muted">Total Revenue</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-span-4">
+          <div class="card">
+            <div class="card-body text-center">
+              <i class="bi bi-bag text-warning" style="font-size: 2rem;"></i>
+              <h3 class="mt-2">178</h3>
+              <p class="text-muted">New Orders</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chart and Progress -->
+      <div class="grid mt-4">
+        <div class="col-span-8">
+          <div class="card">
+            <div class="card-header">
+              Revenue Overview
+              <div>
+                <select class="form-select" id="chartPeriod">
+                  <option>This Week</option>
+                  <option>This Month</option>
+                  <option>This Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-placeholder" id="revenueChart">
+                <span>Chart will be rendered here with CDN library</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-span-4">
+          <div class="card">
+            <div class="card-header">
+              Progress Overview
+            </div>
+            <div class="card-body">
+              <div class="progress-container">
+                <div class="progress-label">
+                  <span>Total Sales</span>
+                  <span>78%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar" style="width: 78%"></div>
+                </div>
+              </div>
+              
+              <div class="progress-container">
+                <div class="progress-label">
+                  <span>New Users</span>
+                  <span>63%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar" style="width: 63%"></div>
+                </div>
+              </div>
+              
+              <div class="progress-container">
+                <div class="progress-label">
+                  <span>Conversion Rate</span>
+                  <span>42%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar" style="width: 42%"></div>
+                </div>
+              </div>
+              
+              <div class="progress-container">
+                <div class="progress-label">
+                  <span>Retention</span>
+                  <span>85%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar" style="width: 85%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent Orders Table -->
+      <div class="grid mt-4">
+        <div class="col-span-12">
+          <div class="card">
+            <div class="card-header">
+              Recent Orders
+              <button class="btn btn-outline btn-sm">View All</button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#ORD-001</td>
+                      <td>John Smith</td>
+                      <td>June 12, 2023</td>
+                      <td>$236.50</td>
+                      <td><span class="badge badge-success">Completed</span></td>
+                    </tr>
+                    <tr>
+                      <td>#ORD-002</td>
+                      <td>Sarah Johnson</td>
+                      <td>June 13, 2023</td>
+                      <td>$125.99</td>
+                      <td><span class="badge badge-warning">Processing</span></td>
+                    </tr>
+                    <tr>
+                      <td>#ORD-003</td>
+                      <td>Michael Brown</td>
+                      <td>June 14, 2023</td>
+                      <td>$458.75</td>
+                      <td><span class="badge badge-success">Completed</span></td>
+                    </tr>
+                    <tr>
+                      <td>#ORD-004</td>
+                      <td>Emily Davis</td>
+                      <td>June 14, 2023</td>
+                      <td>$78.25</td>
+                      <td><span class="badge badge-danger">Cancelled</span></td>
+                    </tr>
+                    <tr>
+                      <td>#ORD-005</td>
+                      <td>Robert Wilson</td>
+                      <td>June 15, 2023</td>
+                      <td>$325.00</td>
+                      <td><span class="badge badge-warning">Processing</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Form & Calendar -->
+      <div class="grid mt-4">
+        <div class="col-span-6">
+          <div class="card">
+            <div class="card-header">
+              Contact Form
+            </div>
+            <div class="card-body">
+              <form id="contactForm">
+                <div class="form-group">
+                  <label for="name" class="form-label">Name</label>
+                  <input type="text" id="name" class="form-control" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" id="email" class="form-control" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                  <label for="message" class="form-label">Message</label>
+                  <textarea id="message" class="form-control" rows="4" placeholder="Enter your message"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-span-6">
+          <div class="card">
+            <div class="card-header">
+              Calendar
+            </div>
+            <div class="card-body">
+              <div class="calendar">
+                <div class="calendar-header">
+                  <button class="btn btn-outline btn-sm" id="prevMonth">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <h4 id="currentMonth">June 2023</h4>
+                  <button class="btn btn-outline btn-sm" id="nextMonth">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                  <!-- Calendar days will be generated via JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer">
+    <!-- Toasts will be added here dynamically -->
+  </div>
+
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Main JavaScript -->
   <script>
-    // Initialize Lucide icons
-    lucide.createIcons();
-    
-    // Main app
+    // Initialize the sidebar
     document.addEventListener('DOMContentLoaded', function() {
-      // Create app structure
-      const app = document.createElement('div');
-      app.className = 'app';
+      const sidebar = document.getElementById('sidebar');
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
       
-      // Create header
-      const header = document.createElement('header');
-      header.className = 'header';
-      header.innerHTML = `
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <div class="text-primary mr-2">${lucide.icons.layers.toSvg({ size: 20 })}</div>
-            <h1 class="text-lg font-medium">Codebase Visualizer</h1>
-          </div>
-          
-          <div class="flex items-center space-x-3">
-            <button id="load-sample" class="text-sm py-1 px-3 border border-gray-200 rounded-full hover:bg-gray-100 transition-colors flex items-center">
-              ${lucide.icons.zap.toSvg({ size: 14 })}
-              <span class="ml-1">Load Sample</span>
-            </button>
-            
-            <div class="relative">
-              <input type="file" id="folder-input" class="hidden" multiple />
-              <button id="select-folder" class="text-sm py-1 px-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors flex items-center">
-                ${lucide.icons.upload.toSvg({ size: 14 })}
-                <span class="ml-1">Select Folder</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Create content
-      const content = document.createElement('div');
-      content.className = 'content';
-      
-      // Create sidebar
-      const sidebar = document.createElement('div');
-      sidebar.className = 'sidebar';
-      sidebar.innerHTML = `
-        <div class="p-4 border-b border-gray-200">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="font-medium">Project Structure</h2>
-            <button id="toggle-search" class="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-              ${lucide.icons.search.toSvg({ size: 16 })}
-            </button>
-          </div>
-          
-          <div id="search-container" class="hidden animate-fadeIn">
-            <div class="relative">
-              <input
-                type="text"
-                id="search-input"
-                placeholder="Search files..."
-                class="w-full py-1.5 px-3 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <button id="clear-search" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
-                ${lucide.icons.x.toSvg({ size: 14 })}
-              </button>
-            </div>
-          </div>
-        </div>
+      // Toggle sidebar on desktop
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
         
-        <div id="file-tree" class="flex-grow overflow-y-auto p-2 file-tree">
-          <div class="text-center py-8 text-gray-500">
-            ${lucide.icons.folderOpen.toSvg({ size: 32, class: 'mx-auto mb-2 opacity-50' })}
-            <p class="text-sm">No files to display</p>
-            <p class="text-xs mt-1">Select a folder to visualize</p>
-          </div>
-        </div>
-      `;
-      
-      // Create graph container
-      const graphContainer = document.createElement('div');
-      graphContainer.className = 'graph-container';
-      graphContainer.id = 'reactflow-container';
-      
-      // Assemble the app
-      content.appendChild(sidebar);
-      content.appendChild(graphContainer);
-      app.appendChild(header);
-      app.appendChild(content);
-      
-      // Add to DOM
-      document.getElementById('root').appendChild(app);
-      
-      // Initialize ReactFlow
-      let reactFlowInstance;
-      let nodes = [];
-      let edges = [];
-      
-      // State variables
-      let rootPath = '';
-      let fileTree = null;
-      let expandedFolders = new Set();
-      let selectedItem = null;
-      let isSearching = false;
-      let searchTerm = '';
-      let isSettingsOpen = false;
-      let nodeSize = 150;
-      let nodePadding = 20;
-      let edgeStyle = 'default';
-      let nodeColorScheme = 'default';
-      let isLoading = false;
-      
-      // Initialize ReactFlow
-      const reactFlowContainer = document.getElementById('reactflow-container');
-      const { ReactFlow, Background, Controls, MiniMap, Panel, MarkerType } = ReactFlowUMD;
-      const BackgroundVariant = {
-        Dots: 'dots',
-        Lines: 'lines',
-        Cross: 'cross'
-      };
-      
-      // Function to show toast notifications
-      const toast = {
-        info: (message) => showToast(message, 'info'),
-        success: (message) => showToast(message, 'success'),
-        error: (message) => showToast(message, 'error')
-      };
-      
-      function showToast(message, type) {
-        const toastContainer = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 p-4 rounded-md shadow-md text-white z-50 ${
-          type === 'success' ? 'bg-green-500' : 
-          type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        }`;
-        toast.textContent = message;
-        toastContainer.appendChild(toast);
-        
-        setTimeout(() => {
-          toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-          setTimeout(() => toast.remove(), 500);
-        }, 3000);
-      }
-      
-      // Function to handle folder selection
-      document.getElementById('select-folder').addEventListener('click', () => {
-        document.getElementById('folder-input').click();
+        // Toggle the icon
+        const icon = sidebarToggle.querySelector('i');
+        if (sidebar.classList.contains('collapsed')) {
+          icon.classList.remove('bi-chevron-left');
+          icon.classList.add('bi-chevron-right');
+        } else {
+          icon.classList.remove('bi-chevron-right');
+          icon.classList.add('bi-chevron-left');
+        }
       });
       
-      document.getElementById('folder-input').addEventListener('change', handleFolderSelect);
+      // Toggle sidebar on mobile
+      mobileSidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
       
-      function handleFolderSelect(event) {
-        const items = event.target.files;
-        
-        if (!items || items.length === 0) {
-          return;
-        }
-        
-        setIsLoading(true);
-        toast.info('Analyzing folder structure...');
-        
-        // Simulate processing delay
-        setTimeout(() => {
-          try {
-            // Create a simulated file tree from the selected files
-            const tree = simulateFileTree(items);
-            
-            rootPath = tree.name;
-            fileTree = tree;
-            
-            // Generate initial graph
-            generateDependencyGraph(tree);
-            
-            // Render file tree
-            renderFileTree();
-            
-            toast.success('Folder structure loaded successfully!');
-          } catch (error) {
-            console.error('Error processing folder:', error);
-            toast.error('Failed to process folder structure');
-          } finally {
-            setIsLoading(false);
-          }
-        }, 1000);
-      }
+      // Initialize the revenue chart
+      initializeChart();
       
-      // Function to simulate file tree structure
-      function simulateFileTree(items) {
-        // Create a basic simulated structure for demo purposes
-        const fileExtensions = ['.js', '.jsx', '.html', '.css', '.json', '.md'];
-        const folderNames = ['src', 'components', 'utils', 'styles', 'assets', 'pages', 'hooks', 'contexts'];
-        
-        // Create root folder
-        const root = {
-          name: 'project-root',
-          type: 'folder',
-          children: []
-        };
-        
-        // Create some folders
-        for (let i = 0; i < 4; i++) {
-          const folder = {
-            name: folderNames[i % folderNames.length],
-            type: 'folder',
-            children: []
-          };
-          
-          // Add files to each folder
-          for (let j = 0; j < 3 + Math.floor(Math.random() * 5); j++) {
-            const fileExt = fileExtensions[Math.floor(Math.random() * fileExtensions.length)];
-            const fileName = `file${j + 1}${fileExt}`;
-            
-            folder.children.push({
-              name: fileName,
-              type: 'file',
-              size: Math.floor(Math.random() * 100000),
-              content: 'Simulated file content'
-            });
-          }
-          
-          // Add sub-folders with files
-          if (Math.random() > 0.5) {
-            const subFolder = {
-              name: `${folderNames[(i + 4) % folderNames.length]}`,
-              type: 'folder',
-              children: []
-            };
-            
-            for (let k = 0; k < 2 + Math.floor(Math.random() * 3); k++) {
-              const fileExt = fileExtensions[Math.floor(Math.random() * fileExtensions.length)];
-              const fileName = `subfile${k + 1}${fileExt}`;
-              
-              subFolder.children.push({
-                name: fileName,
-                type: 'file',
-                size: Math.floor(Math.random() * 100000),
-                content: 'Simulated sub-file content'
-              });
-            }
-            
-            folder.children.push(subFolder);
-          }
-          
-          root.children.push(folder);
-        }
-        
-        return root;
-      }
+      // Initialize calendar
+      initializeCalendar();
       
-      // Function to generate dependency graph
-      function generateDependencyGraph(tree) {
-        if (!tree) return;
+      // Handle contact form submission
+      const contactForm = document.getElementById('contactForm');
+      contactForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Get form values
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const message = document.getElementById('message').value;
         
-        nodes = [];
-        edges = [];
-        const processedNodes = new Set();
-        
-        // Function to process a file or folder
-        function processItem(item, parentId = null, level = 0, position = { x: 0, y: 0 }) {
-          const id = `${level}-${item.name}-${Math.random().toString(36).substring(7)}`;
-          
-          if (processedNodes.has(id)) return;
-          processedNodes.add(id);
-          
-          // Calculate position offset for visual appeal
-          const xOffset = Math.random() * 100 - 50;
-          const yOffset = Math.random() * 100 - 50;
-          
-          const nodePosition = {
-            x: position.x + level * 250 + xOffset,
-            y: position.y + level * 120 + yOffset
-          };
-          
-          // Create node based on type
-          const node = {
-            id,
-            data: { 
-              label: item.name,
-              type: item.type,
-              size: item.size,
-              level
-            },
-            position: nodePosition,
-            className: `node ${item.type}-node slide-up`,
-            style: { animationDelay: `${level * 0.1}s` }
-          };
-          
-          nodes.push(node);
-          
-          // Connect to parent node if exists
-          if (parentId) {
-            const edgeId = `e-${parentId}-${id}`;
-            edges.push({
-              id: edgeId,
-              source: parentId,
-              target: id,
-              animated: false,
-              style: { strokeWidth: 1.5 },
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                width: 15,
-                height: 15,
-                color: '#888',
-              },
-              className: 'fade-in'
-            });
-          }
-          
-          // Process children for folders
-          if (item.type === 'folder' && item.children) {
-            item.children.forEach((child, index) => {
-              // Adjust position for children
-              const childPosition = {
-                x: nodePosition.x + 50 + (index % 2) * 100,
-                y: nodePosition.y + 100 + (index % 3) * 50
-              };
-              
-              processItem(child, id, level + 1, childPosition);
-            });
-          }
-          
-          // Simulate some random dependencies between files
-          if (item.type === 'file' && level > 0 && Math.random() > 0.7 && nodes.length > 5) {
-            // Find a random node to connect to
-            const randomNodeIndex = Math.floor(Math.random() * (nodes.length - 1));
-            const randomNode = nodes[randomNodeIndex];
-            
-            if (randomNode && randomNode.id !== id && randomNode.id !== parentId) {
-              const dependencyType = Math.random() > 0.5 ? 'imports' : 'exports';
-              
-              const depEdgeId = `dep-${id}-${randomNode.id}`;
-              edges.push({
-                id: depEdgeId,
-                source: id,
-                target: randomNode.id,
-                label: dependencyType,
-                animated: true,
-                style: { 
-                  stroke: dependencyType === 'imports' ? '#3b82f6' : '#10b981',
-                  strokeWidth: 1.5,
-                  strokeDasharray: '5,5' 
-                },
-                className: 'fade-in'
-              });
-            }
-          }
-        }
-        
-        // Start processing from the root
-        processItem(tree, null, 0, { x: 250, y: 50 });
-        
-        // Render the graph
-        renderGraph();
-      }
-      
-      // Function to render the graph
-      function renderGraph() {
-        // Create ReactFlow component
-        const reactFlow = React.createElement(
-          ReactFlow,
-          {
-            nodes: nodes,
-            edges: edges,
-            onNodesChange: onNodesChange,
-            onEdgesChange: onEdgesChange,
-            onConnect: onConnect,
-            onNodeClick: onNodeClick,
-            onInit: onInit,
-            nodeTypes: { customNode: customNode },
-            fitView: true,
-            minZoom: 0.1,
-            maxZoom: 2,
-            defaultViewport: { x: 0, y: 0, zoom: 0.5 }
-          },
-          [
-            React.createElement(Background, {
-              variant: BackgroundVariant.Dots,
-              gap: 12,
-              size: 1,
-              color: 'hsl(214, 32%, 91%)'
-            }),
-            React.createElement(Controls, {
-              className: 'bg-white border border-gray-200 rounded-md shadow-sm'
-            }),
-            React.createElement(MiniMap, {
-              className: 'bg-white border border-gray-200 rounded-md shadow-sm',
-              maskColor: 'rgba(240, 240, 240, 0.5)',
-              nodeColor: (node) => {
-                if (node.data?.type === 'file') return 'rgba(59, 130, 246, 0.3)';
-                return 'rgba(209, 213, 219, 0.3)';
-              }
-            }),
-            React.createElement(
-              Panel,
-              { position: 'top-right', className: 'space-x-2' },
-              [
-                createButton('Center Graph', 'refresh-cw', centerGraph),
-                createButton('Visualization Settings', 'settings', toggleSettings),
-                createButton('Export Dependencies', 'download', exportDependencies)
-              ]
-            ),
-            isSettingsOpen && React.createElement(
-              Panel,
-              { position: 'top-center' },
-              [React.createElement(SettingsPanel, {})]
-            )
-          ]
-        );
-        
-        // Render to container
-        ReactDOM.render(reactFlow, reactFlowContainer);
-        
-        // If loading overlay is needed
-        if (isLoading) {
-          renderLoadingOverlay();
-        }
-      }
-      
-      // Function to create a button
-      function createButton(title, iconName, onClick) {
-        return React.createElement(
-          'button',
-          {
-            className: 'p-2 bg-white text-gray-800 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors',
-            onClick: onClick,
-            title: title
-          },
-          [lucide.icons[iconName].toSvg({ size: 16 })]
-        );
-      }
-      
-      // Custom node renderer
-      function customNode(props) {
-        const { data } = props;
-        
-        return React.createElement(
-          'div',
-          {},
-          [
-            React.createElement(
-              'div',
-              { className: 'node-header' },
-              [
-                data.type === 'file' 
-                  ? lucide.icons.file.toSvg({ size: 14 }) 
-                  : lucide.icons.folder.toSvg({ size: 14 }),
-                React.createElement('span', {}, data.label)
-              ]
-            ),
-            React.createElement('div', { className: 'node-type' }, data.type),
-            data.size && React.createElement('div', { className: 'text-xs mt-1' }, formatBytes(data.size))
-          ]
-        );
-      }
-      
-      // Settings panel
-      function SettingsPanel() {
-        const settings = {
-          nodeSize,
-          nodePadding,
-          edgeStyle,
-          colorScheme: nodeColorScheme
-        };
-        
-        return React.createElement(
-          'div',
-          { className: 'glass-panel rounded-lg p-4 w-80 animate-fade-in' },
-          [
-            // Header
-            React.createElement(
-              'div',
-              { className: 'flex justify-between items-center mb-4' },
-              [
-                React.createElement('h3', { className: 'font-medium' }, 'Visual Settings'),
-                React.createElement(
-                  'button',
-                  { 
-                    className: 'p-1 rounded-full hover:bg-gray-100',
-                    onClick: () => setIsSettingsOpen(false)
-                  },
-                  [lucide.icons.x.toSvg({ size: 16 })]
-                )
-              ]
-            ),
-            
-            // Settings controls
-            React.createElement(
-              'div',
-              { className: 'space-y-4' },
-              [
-                // Node size
-                createRangeControl('Node Size', settings.nodeSize, 100, 300, (value) => {
-                  settings.nodeSize = parseInt(value);
-                }),
-                
-                // Node padding
-                createRangeControl('Node Padding', settings.nodePadding, 10, 30, (value) => {
-                  settings.nodePadding = parseInt(value);
-                }),
-                
-                // Edge style
-                createSelectControl('Edge Style', settings.edgeStyle, 
-                  ['default', 'step', 'smoothstep', 'straight', 'bezier', 'animated'], 
-                  (value) => {
-                    settings.edgeStyle = value;
-                  }
-                ),
-                
-                // Color scheme
-                createSelectControl('Color Scheme', settings.colorScheme, 
-                  ['default', 'vibrant', 'pastel', 'monochrome'], 
-                  (value) => {
-                    settings.colorScheme = value;
-                  }
-                ),
-                
-                // Apply button
-                React.createElement(
-                  'button',
-                  {
-                    className: 'w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors',
-                    onClick: () => applySettings(settings)
-                  },
-                  'Apply Changes'
-                )
-              ]
-            )
-          ]
-        );
-      }
-      
-      // Helper to create range control
-      function createRangeControl(label, value, min, max, onChange) {
-        return React.createElement(
-          'div',
-          {},
-          [
-            React.createElement('label', { className: 'block text-sm mb-1' }, label),
-            React.createElement('input', {
-              type: 'range',
-              min: min,
-              max: max,
-              value: value,
-              onChange: (e) => onChange(e.target.value),
-              className: 'w-full'
-            }),
-            React.createElement(
-              'div',
-              { className: 'flex justify-between text-xs text-gray-500' },
-              [
-                React.createElement('span', {}, 'Small'),
-                React.createElement('span', {}, 'Large')
-              ]
-            )
-          ]
-        );
-      }
-      
-      // Helper to create select control
-      function createSelectControl(label, value, options, onChange) {
-        return React.createElement(
-          'div',
-          {},
-          [
-            React.createElement('label', { className: 'block text-sm mb-2' }, label),
-            React.createElement(
-              'div',
-              { className: 'grid grid-cols-3 gap-2' },
-              options.map(option => 
-                React.createElement(
-                  'button',
-                  {
-                    key: option,
-                    className: `text-xs py-1 px-2 rounded border ${
-                      value === option 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`,
-                    onClick: () => onChange(option)
-                  },
-                  option.charAt(0).toUpperCase() + option.slice(1)
-                )
-              )
-            )
-          ]
-        );
-      }
-      
-      // Function to render file tree
-      function renderFileTree() {
-        const fileTreeEl = document.getElementById('file-tree');
-        fileTreeEl.innerHTML = '';
-        
-        if (fileTree) {
-          // Filter tree if search term exists
-          const filteredTree = searchTerm ? filterFileTree(fileTree, searchTerm) : fileTree;
-          
-          if (filteredTree) {
-            const treeElement = renderFileTreeItem(filteredTree);
-            fileTreeEl.appendChild(treeElement);
-          } else {
-            renderEmptyFileTree(fileTreeEl, 'No matching files found');
-          }
+        // Simple validation
+        if (name && email && message) {
+          // Show success toast
+          showToast('Form Submitted', 'Your message has been sent successfully!');
+          // Reset form
+          contactForm.reset();
         } else {
-          renderEmptyFileTree(fileTreeEl);
+          // Show error toast
+          showToast('Error', 'Please fill in all fields', 'error');
         }
-      }
-      
-      // Function to render empty file tree message
-      function renderEmptyFileTree(container, message = 'No files to display') {
-        container.innerHTML = `
-          <div class="text-center py-8 text-gray-500">
-            ${lucide.icons.folderOpen.toSvg({ size: 32, class: 'mx-auto mb-2 opacity-50' })}
-            <p class="text-sm">${message}</p>
-            <p class="text-xs mt-1">Select a folder to visualize</p>
-          </div>
-        `;
-      }
-      
-      // Function to render a file tree item
-      function renderFileTreeItem(item, path = [], level = 0) {
-        const itemPath = [...path, item.name].join('/');
-        const isFolder = item.type === 'folder';
-        const isExpanded = expandedFolders.has(itemPath);
-        const isSelected = selectedItem === itemPath;
-        
-        const itemEl = document.createElement('div');
-        itemEl.className = 'file-tree-item';
-        itemEl.style.marginLeft = `${level * 16}px`;
-        
-        const itemHeader = document.createElement('div');
-        itemHeader.className = `flex items-center py-1 px-2 rounded cursor-pointer ${isSelected ? 'selected' : ''}`;
-        itemHeader.addEventListener('click', () => {
-          if (isFolder) {
-            toggleFolder(itemPath);
-          } else {
-            selectItem(item, itemPath);
-          }
-        });
-        
-        if (isFolder) {
-          itemHeader.addEventListener('dblclick', () => {
-            selectItem(item, itemPath);
-          });
-        }
-        
-        // Add folder toggle icon
-        if (isFolder) {
-          const toggleIcon = document.createElement('span');
-          toggleIcon.className = 'mr-1';
-          toggleIcon.innerHTML = isExpanded 
-            ? lucide.icons.chevronDown.toSvg({ size: 14 }) 
-            : lucide.icons.chevronRight.toSvg({ size: 14 });
-          itemHeader.appendChild(toggleIcon);
-        }
-        
-        // Add item icon
-        const itemIcon = document.createElement('span');
-        itemIcon.className = 'mr-2';
-        itemIcon.innerHTML = isFolder 
-          ? (isExpanded ? lucide.icons.folderOpen.toSvg({ size: 16 }) : lucide.icons.folder.toSvg({ size: 16 }))
-          : lucide.icons.file.toSvg({ size: 16 });
-        itemHeader.appendChild(itemIcon);
-        
-        // Add item name
-        const itemName = document.createElement('span');
-        itemName.className = 'text-sm truncate';
-        itemName.textContent = item.name;
-        itemHeader.appendChild(itemName);
-        
-        itemEl.appendChild(itemHeader);
-        
-        // Add children if folder is expanded
-        if (isFolder && isExpanded && item.children) {
-          const childrenContainer = document.createElement('div');
-          childrenContainer.className = 'pl-2';
-          
-          item.children.forEach((child, i) => {
-            const childEl = renderFileTreeItem(child, [...path, item.name], level + 1);
-            childrenContainer.appendChild(childEl);
-          });
-          
-          itemEl.appendChild(childrenContainer);
-        }
-        
-        return itemEl;
-      }
-      
-      // Function to toggle folder expansion
-      function toggleFolder(folderPath) {
-        if (expandedFolders.has(folderPath)) {
-          expandedFolders.delete(folderPath);
-        } else {
-          expandedFolders.add(folderPath);
-        }
-        renderFileTree();
-      }
-      
-      // Function to select an item in the file tree
-      function selectItem(item, itemPath) {
-        selectedItem = itemPath;
-        renderFileTree();
-        
-        // Highlight the corresponding node
-        if (item.type === 'file' || item.type === 'folder') {
-          highlightNodeByLabel(item.name);
-        }
-      }
-      
-      // Function to highlight a node by label
-      function highlightNodeByLabel(label) {
-        nodes = nodes.map((n) => ({
-          ...n,
-          style: {
-            ...n.style,
-            borderColor: n.data.label === label ? '#3b82f6' : undefined,
-            boxShadow: n.data.label === label ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : undefined,
-          },
-        }));
-        
-        // Find the node to center view on it
-        const nodeToFocus = nodes.find(n => n.data.label === label);
-        if (nodeToFocus && reactFlowInstance) {
-          reactFlowInstance.setCenter(
-            nodeToFocus.position.x + 75, 
-            nodeToFocus.position.y + 50, 
-            { duration: 800 }
-          );
-        }
-        
-        renderGraph();
-      }
-      
-      // Function to handle node click
-      function onNodeClick(event, node) {
-        // Highlight the node
-        nodes = nodes.map((n) => ({
-          ...n,
-          style: {
-            ...n.style,
-            borderColor: n.id === node.id ? '#3b82f6' : undefined,
-            boxShadow: n.id === node.id ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : undefined,
-          },
-        }));
-        
-        renderGraph();
-        
-        // Find the corresponding item in the file tree
-        findAndSelectFileTreeItem(fileTree, node.data.label);
-      }
-      
-      // Function to find and select an item in the file tree
-      function findAndSelectFileTreeItem(tree, itemName, path = []) {
-        if (!tree) return false;
-        
-        if (tree.name === itemName) {
-          selectedItem = [...path, tree.name].join('/');
-          
-          // Expand all parent folders
-          const folderPaths = [];
-          for (let i = 0; i < path.length; i++) {
-            folderPaths.push(path.slice(0, i + 1).join('/'));
-          }
-          
-          folderPaths.forEach(p => expandedFolders.add(p));
-          renderFileTree();
-          
-          return true;
-        }
-        
-        if (tree.children) {
-          for (const child of tree.children) {
-            if (findAndSelectFileTreeItem(child, itemName, [...path, tree.name])) {
-              return true;
-            }
-          }
-        }
-        
-        return false;
-      }
-      
-      // Function to filter file tree based on search term
-      function filterFileTree(tree, term) {
-        if (!tree) return null;
-        if (!term) return tree;
-        
-        // Check if current node matches
-        const matches = tree.name.toLowerCase().includes(term.toLowerCase());
-        
-        // For files, just check if it matches
-        if (tree.type === 'file') {
-          return matches ? tree : null;
-        }
-        
-        // For folders, also check children
-        if (tree.children) {
-          const filteredChildren = tree.children
-            .map(child => filterFileTree(child, term))
-            .filter(Boolean);
-          
-          if (matches || filteredChildren.length > 0) {
-            return {
-              ...tree,
-              children: filteredChildren
-            };
-          }
-        }
-        
-        return null;
-      }
-      
-      // Function to handle nodes change
-      function onNodesChange(changes) {
-        // This would update nodes state, but we're handling it differently in vanilla JS
-      }
-      
-      // Function to handle edges change
-      function onEdgesChange(changes) {
-        // This would update edges state, but we're handling it differently in vanilla JS
-      }
-      
-      // Function to handle edge connections
-      function onConnect(params) {
-        const newEdge = {
-          ...params,
-          id: `edge-${params.source}-${params.target}`,
-          animated: true,
-          style: { stroke: '#3b82f6', strokeWidth: 1.5 },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-          },
-          className: 'fade-in'
-        };
-        
-        edges.push(newEdge);
-        renderGraph();
-      }
-      
-      // Initialize ReactFlow
-      function onInit(instance) {
-        reactFlowInstance = instance;
-        
-        // Fit view after a short delay to ensure rendering
-        setTimeout(() => {
-          if (reactFlowInstance) {
-            reactFlowInstance.fitView({ padding: 0.2 });
-          }
-        }, 300);
-      }
-      
-      // Function to center the graph
-      function centerGraph() {
-        if (reactFlowInstance) {
-          reactFlowInstance.fitView({ padding: 0.2, duration: 800 });
-          toast.success('Graph centered');
-        }
-      }
-      
-      // Function to toggle settings panel
-      function toggleSettings() {
-        isSettingsOpen = !isSettingsOpen;
-        renderGraph();
-      }
-      
-      // Function to apply visual settings
-      function applySettings(settings) {
-        nodeSize = settings.nodeSize;
-        nodePadding = settings.nodePadding;
-        edgeStyle = settings.edgeStyle;
-        nodeColorScheme = settings.colorScheme;
-        
-        // Apply settings to nodes
-        nodes = nodes.map((n) => ({
-          ...n,
-          style: {
-            ...n.style,
-            width: nodeSize,
-            padding: nodePadding,
-            // Apply color scheme
-            backgroundColor: getNodeColorByScheme(n.data.type, nodeColorScheme),
-          },
-        }));
-        
-        // Apply settings to edges
-        edges = edges.map((e) => ({
-          ...e,
-          // Apply edge style
-          type: edgeStyle === 'bezier' ? 'default' : edgeStyle,
-          animated: edgeStyle === 'animated',
-        }));
-        
-        toast.success('Settings applied');
-        isSettingsOpen = false;
-        renderGraph();
-      }
-      
-      // Get node color based on scheme and node type
-      function getNodeColorByScheme(type, scheme) {
-        if (scheme === 'default') return undefined;
-        
-        const schemes = {
-          vibrant: {
-            file: 'hsla(210, 100%, 97%, 1)',
-            folder: 'hsla(211, 100%, 95%, 1)'
-          },
-          pastel: {
-            file: 'hsla(180, 60%, 97%, 1)',
-            folder: 'hsla(210, 60%, 95%, 1)'
-          },
-          monochrome: {
-            file: 'hsla(220, 10%, 98%, 1)',
-            folder: 'hsla(220, 10%, 95%, 1)'
-          }
-        };
-        
-        return schemes[scheme][type] || undefined;
-      }
-      
-      // Function to export dependencies as CSV
-      function exportDependencies() {
-        if (!edges.length) {
-          toast.error('No dependencies to export');
-          return;
-        }
-        
-        // Create CSV content
-        let csv = 'Source,Target,Type\n';
-        edges.forEach(edge => {
-          const source = nodes.find(n => n.id === edge.source)?.data.label || edge.source;
-          const target = nodes.find(n => n.id === edge.target)?.data.label || edge.target;
-          const type = edge.label || 'depends on';
-          
-          csv += `"${source}","${target}","${type}"\n`;
-        });
-        
-        // Create and download file
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        saveAs(blob, 'dependencies.csv');
-        
-        toast.success('Dependencies exported successfully');
-      }
-      
-      // Format bytes to human readable format
-      function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-      
-      // Function to load sample data
-      document.getElementById('load-sample').addEventListener('click', loadSampleData);
-      
-      function loadSampleData() {
-        setIsLoading(true);
-        toast.info('Loading sample codebase...');
-        
-        // Simulate API delay
-        setTimeout(() => {
-          try {
-            // Create a more complex sample tree
-            const sampleTree = createSampleCodebase();
-            
-            rootPath = sampleTree.name;
-            fileTree = sampleTree;
-            
-            // Generate initial graph
-            generateDependencyGraph(sampleTree);
-            
-            // Render file tree
-            renderFileTree();
-            
-            toast.success('Sample codebase loaded successfully!');
-          } catch (error) {
-            console.error('Error loading sample data:', error);
-            toast.error('Failed to load sample data');
-          } finally {
-            setIsLoading(false);
-          }
-        }, 1500);
-      }
-      
-      // Create a realistic sample codebase structure
-      function createSampleCodebase() {
-        return {
-          name: 'my-react-app',
-          type: 'folder',
-          children: [
-            {
-              name: 'node_modules',
-              type: 'folder',
-              children: [
-                { name: 'react', type: 'folder', children: [
-                  { name: 'package.json', type: 'file', size: 2540 },
-                  { name: 'index.js', type: 'file', size: 12400 }
-                ]},
-                { name: 'typescript', type: 'folder', children: [
-                  { name: 'package.json', type: 'file', size: 3210 },
-                  { name: 'bin', type: 'folder', children: [
-                    { name: 'tsc', type: 'file', size: 1450 }
-                  ]}
-                ]}
-              ]
-            },
-            {
-              name: 'src',
-              type: 'folder',
-              children: [
-                { name: 'index.js', type: 'file', size: 320 },
-                { name: 'App.js', type: 'file', size: 2100 },
-                { name: 'App.css', type: 'file', size: 1230 },
-                { 
-                  name: 'components', 
-                  type: 'folder', 
-                  children: [
-                    { name: 'Header.js', type: 'file', size: 1820 },
-                    { name: 'Footer.js', type: 'file', size: 940 },
-                    { name: 'Sidebar.js', type: 'file', size: 2670 },
-                    { name: 'Button.js', type: 'file', size: 1050 }
-                  ]
-                },
-                { 
-                  name: 'pages', 
-                  type: 'folder', 
-                  children: [
-                    { name: 'Home.js', type: 'file', size: 3240 },
-                    { name: 'About.js', type: 'file', size: 1890 },
-                    { name: 'Contact.js', type: 'file', size: 2340 }
-                  ]
-                },
-                { 
-                  name: 'utils', 
-                  type: 'folder', 
-                  children: [
-                    { name: 'api.js', type: 'file', size: 2140 },
-                    { name: 'helpers.js', type: 'file', size: 3060 },
-                    { name: 'constants.js', type: 'file', size: 890 }
-                  ]
-                }
-              ]
-            },
-            {
-              name: 'public',
-              type: 'folder',
-              children: [
-                { name: 'index.html', type: 'file', size: 830 },
-                { name: 'favicon.ico', type: 'file', size: 4502 },
-                { name: 'logo.png', type: 'file', size: 12400 }
-              ]
-            },
-            { name: 'package.json', type: 'file', size: 2340 },
-            { name: 'README.md', type: 'file', size: 4210 }
-          ]
-        };
-      }
-      
-      // Function to toggle search mode
-      document.getElementById('toggle-search').addEventListener('click', toggleSearch);
-      
-      function toggleSearch() {
-        isSearching = !isSearching;
-        const searchContainer = document.getElementById('search-container');
-        const searchInput = document.getElementById('search-input');
-        const clearSearchBtn = document.getElementById('clear-search');
-        
-        if (isSearching) {
-          searchContainer.classList.remove('hidden');
-          searchInput.focus();
-          
-          searchInput.addEventListener('input', function() {
-            searchTerm = this.value.trim();
-            if (searchTerm) {
-              clearSearchBtn.classList.remove('hidden');
-            } else {
-              clearSearchBtn.classList.add('hidden');
-            }
-            renderFileTree();
-          });
-          
-          clearSearchBtn.addEventListener('click', function() {
-            searchInput.value = '';
-            searchTerm = '';
-            this.classList.add('hidden');
-            renderFileTree();
-          });
-        } else {
-          searchContainer.classList.add('hidden');
-          searchTerm = '';
-          renderFileTree();
-        }
-      }
-      
-      // Function to render loading overlay
-      function renderLoadingOverlay() {
-        const overlay = document.createElement('div');
-        overlay.className = 'absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center';
-        overlay.innerHTML = `
-          <div class="text-center p-6 rounded-lg">
-            <div class="animate-spin h-8 w-8 border-t-2 border-blue-500 rounded-full mx-auto mb-4"></div>
-            <p class="font-medium">Processing...</p>
-            <p class="text-sm text-gray-500 mt-1">Analyzing codebase structure</p>
-          </div>
-        `;
-        
-        reactFlowContainer.appendChild(overlay);
-      }
-      
-      // Function to set loading state
-      function setIsLoading(value) {
-        isLoading = value;
-        
-        if (value) {
-          renderLoadingOverlay();
-        } else {
-          // Remove any existing loading overlays
-          const overlays = reactFlowContainer.querySelectorAll('.absolute.inset-0');
-          overlays.forEach(overlay => overlay.remove());
-        }
-      }
-      
-      // Load sample data on initial mount for demo purposes
-      loadSampleData();
+      });
     });
+    
+    // Initialize Revenue Chart
+    function initializeChart() {
+      const ctx = document.getElementById('revenueChart');
+      
+      // Replace placeholder with actual Chart.js chart
+      ctx.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      ctx.appendChild(canvas);
+      
+      // Create chart
+      new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Revenue',
+            data: [12, 19, 3, 5, 2, 3, 15],
+            borderColor: '#8B5CF6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+      
+      // Handle chart period change
+      document.getElementById('chartPeriod').addEventListener('change', function() {
+        // In a real app, this would fetch new data based on selection
+        showToast('Chart Updated', `Showing data for ${this.value}`, 'info');
+      });
+    }
+    
+    // Initialize Calendar
+    function initializeCalendar() {
+      const calendarGrid = document.getElementById('calendarGrid');
+      const currentMonthElem = document.getElementById('currentMonth');
+      const prevMonthBtn = document.getElementById('prevMonth');
+      const nextMonthBtn = document.getElementById('nextMonth');
+      
+      // Get current date
+      let currentDate = new Date();
+      let currentMonth = currentDate.getMonth();
+      let currentYear = currentDate.getFullYear();
+      
+      // Render calendar initially
+      renderCalendar(currentMonth, currentYear);
+      
+      // Update month name
+      function updateMonthName(month, year) {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                            'July', 'August', 'September', 'October', 'November', 'December'];
+        currentMonthElem.textContent = `${monthNames[month]} ${year}`;
+      }
+      
+      // Render calendar
+      function renderCalendar(month, year) {
+        // Clear existing calendar
+        calendarGrid.innerHTML = '';
+        
+        // Add day of week headers
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        daysOfWeek.forEach(day => {
+          const dayHeader = document.createElement('div');
+          dayHeader.className = 'calendar-day font-weight-bold';
+          dayHeader.textContent = day;
+          calendarGrid.appendChild(dayHeader);
+        });
+        
+        // Get first day of month and total days
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        // Add empty cells for days before start of month
+        for (let i = 0; i < firstDay; i++) {
+          const emptyDay = document.createElement('div');
+          emptyDay.className = 'calendar-day';
+          calendarGrid.appendChild(emptyDay);
+        }
+        
+        // Add days of the month
+        const today = new Date();
+        for (let i = 1; i <= daysInMonth; i++) {
+          const dayElem = document.createElement('div');
+          dayElem.className = 'calendar-day';
+          dayElem.textContent = i;
+          
+          // Highlight today
+          if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+            dayElem.classList.add('today');
+          }
+          
+          // Add click event
+          dayElem.addEventListener('click', function() {
+            showToast('Date Selected', `You selected ${i} ${currentMonthElem.textContent}`, 'info');
+          });
+          
+          calendarGrid.appendChild(dayElem);
+        }
+        
+        // Update month name
+        updateMonthName(month, year);
+      }
+      
+      // Previous month button
+      prevMonthBtn.addEventListener('click', function() {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+      
+      // Next month button
+      nextMonthBtn.addEventListener('click', function() {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+    }
+    
+    // Toast notification function
+    function showToast(title, message, type = 'success') {
+      const toastContainer = document.getElementById('toastContainer');
+      
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      
+      // Add toast header
+      const toastHeader = document.createElement('div');
+      toastHeader.className = 'toast-header';
+      
+      // Toast title with icon
+      const toastTitle = document.createElement('div');
+      toastTitle.className = 'toast-title';
+      
+      // Add appropriate icon based on type
+      let iconClass;
+      switch(type) {
+        case 'success':
+          iconClass = 'bi-check-circle-fill text-success';
+          break;
+        case 'error':
+          iconClass = 'bi-exclamation-circle-fill text-danger';
+          break;
+        case 'info':
+          iconClass = 'bi-info-circle-fill text-primary';
+          break;
+        case 'warning':
+          iconClass = 'bi-exclamation-triangle-fill text-warning';
+          break;
+        default:
+          iconClass = 'bi-bell-fill text-primary';
+      }
+      
+      toastTitle.innerHTML = `<i class="bi ${iconClass} me-2"></i>${title}`;
+      toastHeader.appendChild(toastTitle);
+      
+      // Close button
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '<i class="bi bi-x"></i>';
+      closeBtn.addEventListener('click', function() {
+        toast.remove();
+      });
+      toastHeader.appendChild(closeBtn);
+      
+      toast.appendChild(toastHeader);
+      
+      // Add toast message
+      const toastBody = document.createElement('div');
+      toastBody.className = 'toast-body';
+      toastBody.textContent = message;
+      toast.appendChild(toastBody);
+      
+      // Add to container
+      toastContainer.appendChild(toast);
+      
+      // Auto dismiss after 5 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        
+        setTimeout(() => {
+          toast.remove();
+        }, 500);
+      }, 5000);
+    }
   </script>
 </body>
 </html>
