@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
       plugins: [
         {
           name: 'add-lovable-script',
-          transformIndexHtml(html) {
+          transformIndexHtml(html: string) {
             // Add the required Lovable script tag for the "Select" feature
             return html.replace(
               '<head>',
