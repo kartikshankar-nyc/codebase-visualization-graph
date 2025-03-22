@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      transformHtml: (html: string) => {
+      transformHtml: (html) => {
         // Add the required Lovable script tag for the "Select" feature
         return html.replace(
           '<head>',
