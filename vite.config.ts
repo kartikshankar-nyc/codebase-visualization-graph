@@ -14,8 +14,8 @@ export default defineConfig(({ mode }) => ({
     react({
       plugins: [
         {
-          filter: /\.[tj]sx?$/,
-          transform(code, id) {
+          filter: (id: string) => /\.[tj]sx?$/.test(id),
+          transform(code: string, id: string) {
             return code;
           },
         },
@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
     }),
     {
       name: 'add-lovable-script',
-      transformIndexHtml(html) {
+      transformIndexHtml(html: string) {
         // Add the required Lovable script tag for the "Select" feature
         return html.replace(
           '<head>',
