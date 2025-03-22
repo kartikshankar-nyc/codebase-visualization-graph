@@ -13,8 +13,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react({
       plugins: [
+        // Remove the problematic filter configuration
+        // and simplify the transform function
         {
-          filter: (id: string) => /\.[tj]sx?$/.test(id),
           transform(code: string, id: string) {
             return code;
           },
