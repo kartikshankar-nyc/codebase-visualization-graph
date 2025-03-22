@@ -14,20 +14,25 @@ export default defineConfig(({ mode }) => ({
     react({
       plugins: [
         {
-          name: 'add-lovable-script',
-          transformIndexHtml(html: string) {
-            // Add the required Lovable script tag for the "Select" feature
-            return html.replace(
-              '<head>',
-              `<head>
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>`
-            );
-          }
-        }
-      ]
+          filter: /\.[tj]sx?$/,
+          transform(code, id) {
+            return code;
+          },
+        },
+      ],
     }),
-    mode === 'development' &&
-    componentTagger(),
+    {
+      name: 'add-lovable-script',
+      transformIndexHtml(html) {
+        // Add the required Lovable script tag for the "Select" feature
+        return html.replace(
+          '<head>',
+          `<head>
+  <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>`
+        );
+      }
+    },
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
