@@ -1,2016 +1,1332 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codebase Visualizer</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <!-- Vis.js for network visualization -->
-  <link href="https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/dist/vis-network.min.css" rel="stylesheet">
-  <!-- JSZip for handling large files -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <!-- Papa Parse for CSV export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  
-  <style>
-    :root {
-      --primary: #6366F1;
-      --secondary: #8B5CF6;
-      --success: #10B981;
-      --danger: #EF4444;
-      --warning: #F59E0B;
-      --info: #3B82F6;
-      --background: #FFFFFF;
-      --foreground: #1F2937;
-      --muted: #F3F4F6;
-      --muted-foreground: #6B7280;
-      --border: #E5E7EB;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codebase Visualizer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- D3.js for network visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- PapaParse for CSV export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #7209b7;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --light-bg: #f8f9fa;
+            --dark-bg: #212529;
+        }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--background);
-      color: var(--foreground);
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      overflow: hidden;
-    }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--light-bg);
+        }
 
-    .app-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-    .header {
-      background-color: var(--primary);
-      color: white;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+        .header {
+            background-color: var(--dark-bg);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
 
-    .main-content {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+        .content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
 
-    .file-explorer {
-      width: 30%;
-      border-right: 1px solid var(--border);
-      overflow: auto;
-      padding: 1rem;
-      background-color: var(--muted);
-    }
+        .file-tree {
+            width: 30%;
+            overflow: auto;
+            padding: 1rem;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
 
-    .graph-container {
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-      background: var(--background);
-    }
+        .graph-container {
+            flex: 1;
+            overflow: hidden;
+            background-color: var(--light-bg);
+            position: relative;
+        }
 
-    #network-graph {
-      width: 100%;
-      height: 100%;
-    }
+        #network-graph {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+        }
 
-    .controls {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
+        .tree-node {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
 
-    .file-tree {
-      list-style-type: none;
-      padding-left: 0;
-    }
+        .tree-node:hover {
+            background-color: #f0f0f0;
+        }
 
-    .file-tree ul {
-      list-style-type: none;
-      padding-left: 1.5rem;
-    }
+        .folder {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
 
-    .file-tree-item {
-      padding: 0.25rem 0;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-    }
+        .file {
+            color: var(--primary-color);
+            margin-left: 15px;
+        }
 
-    .file-tree-item:hover {
-      background-color: rgba(99, 102, 241, 0.1);
-    }
+        .file-icon {
+            margin-right: 5px;
+        }
 
-    .file-tree-item.selected {
-      background-color: rgba(99, 102, 241, 0.2);
-      font-weight: 500;
-    }
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            width: 250px;
+        }
 
-    .file-icon {
-      margin-right: 0.5rem;
-      width: 1.5rem;
-      text-align: center;
-    }
+        .control-group {
+            margin-bottom: 10px;
+        }
 
-    .folder-icon {
-      color: var(--warning);
-    }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
 
-    .file-icon-default {
-      color: var(--info);
-    }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--primary-color);
+        }
 
-    .expandable {
-      margin-right: 0.25rem;
-      width: 1rem;
-      text-align: center;
-      transition: transform 0.2s;
-    }
+        .hidden {
+            display: none;
+        }
 
-    .collapsed .expandable {
-      transform: rotate(-90deg);
-    }
-    
-    .button-primary {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    
-    .button-primary:hover {
-      background-color: #5254cc;
-    }
-    
-    .button-outline {
-      background-color: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .button-outline:hover {
-      background-color: rgba(99, 102, 241, 0.1);
-    }
-    
-    .progress-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(255, 255, 255, 0.8);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .progress-bar-container {
-      width: 50%;
-      height: 20px;
-      background-color: var(--muted);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-    }
-    
-    .progress-bar {
-      height: 100%;
-      background-color: var(--primary);
-      border-radius: 10px;
-      transition: width 0.3s;
-    }
-    
-    .control-group {
-      margin-bottom: 1rem;
-    }
-    
-    .control-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-    
-    .color-picker-group {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .color-picker-label {
-      min-width: 100px;
-    }
-    
-    /* Style for the file input */
-    .file-input-container {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-    }
-    
-    .file-input {
-      position: absolute;
-      font-size: 100px;
-      right: 0;
-      top: 0;
-      opacity: 0;
-      cursor: pointer;
-    }
-    
-    /* Toast notification */
-    .toast-container {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      z-index: 1000;
-    }
-    
-    .toast {
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--primary);
-      border-radius: 0.25rem;
-      padding: 1rem;
-      margin-bottom: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      max-width: 350px;
-    }
-    
-    .toast-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-    
-    .toast-title {
-      font-weight: 600;
-    }
-    
-    .toast-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted-foreground);
-    }
-    
-    /* Loading spinner */
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(99, 102, 241, 0.1);
-      border-radius: 50%;
-      border-top-color: var(--primary);
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    /* Legend */
-    .legend {
-      position: absolute;
-      bottom: 1rem;
-      left: 1rem;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 0.5rem;
-      border-radius: 0.25rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.25rem;
-    }
-    
-    .legend-color {
-      width: 20px;
-      height: 10px;
-      margin-right: 0.5rem;
-      border-radius: 2px;
-    }
-    
-    /* For performance warning */
-    .performance-warning {
-      position: fixed;
-      bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--warning);
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-      display: none;
-      z-index: 1000;
-    }
-    
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .modal {
-      background-color: var(--background);
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      width: 80%;
-      max-width: 600px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .modal-header {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .modal-title {
-      font-weight: 600;
-      font-size: 1.25rem;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1.5rem;
-      color: var(--muted-foreground);
-    }
-    
-    .modal-content {
-      padding: 1rem;
-      flex: 1;
-      overflow: auto;
-    }
-    
-    .modal-footer {
-      padding: 1rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-    }
+        .node {
+            fill: var(--primary-color);
+            stroke: #fff;
+            stroke-width: 2px;
+            cursor: pointer;
+        }
 
-    /* Code viewer */
-    .code-viewer {
-      font-family: 'Courier New', monospace;
-      background-color: #f8f9fa;
-      padding: 1rem;
-      border-radius: 0.25rem;
-      overflow: auto;
-      max-height: 50vh;
-      white-space: pre;
-    }
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+        }
 
-    /* Custom context menu */
-    .context-menu {
-      position: absolute;
-      background-color: var(--background);
-      border: 1px solid var(--border);
-      border-radius: 0.25rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      padding: 0.5rem 0;
-      z-index: 1000;
-    }
-    
-    .context-menu-item {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-    }
-    
-    .context-menu-item:hover {
-      background-color: var(--muted);
-    }
-  </style>
+        .node text {
+            pointer-events: none;
+            font-size: 10px;
+            fill: #333;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .badge {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-  <div class="app-container">
-    <header class="header">
-      <h1>Codebase Visualizer</h1>
-      <div class="d-flex align-items-center gap-2">
-        <div class="file-input-container">
-          <button class="button-primary" id="select-folder-btn">
-            <i class="bi bi-folder2-open me-2"></i>Browse Folder
-          </button>
-          <input type="file" id="folder-input" webkitdirectory directory multiple class="file-input">
-        </div>
-        <button class="button-outline" id="export-csv-btn">
-          <i class="bi bi-file-earmark-arrow-down me-2"></i>Export CSV
-        </button>
-      </div>
-    </header>
-    
-    <div class="main-content">
-      <!-- File explorer on the left -->
-      <div class="file-explorer">
-        <div id="file-tree-container" class="file-tree"></div>
-      </div>
-      
-      <!-- Network graph on the right -->
-      <div class="graph-container">
-        <div id="network-graph"></div>
+    <div class="app-container">
+        <header class="header">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        <h1>Codebase Visualizer</h1>
+                    </div>
+                    <div class="col-auto">
+                        <input type="file" id="folderInput" webkitdirectory directory multiple class="d-none">
+                        <button id="browseButton" class="btn btn-primary">
+                            <i class="bi bi-folder"></i> Browse Files
+                        </button>
+                        <button id="exportButton" class="btn btn-success ms-2" disabled>
+                            <i class="bi bi-download"></i> Export Dependencies (CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <section class="file-tree" id="fileTree">
+                <div class="alert alert-info">
+                    Please select a folder to start visualization.
+                </div>
+            </section>
+
+            <section class="graph-container">
+                <div id="network-graph"></div>
+                <div class="controls">
+                    <h5>Graph Controls</h5>
+                    <div class="control-group">
+                        <label for="nodeColorSelect" class="form-label">Node Color:</label>
+                        <select id="nodeColorSelect" class="form-select form-select-sm">
+                            <option value="#4361ee">Blue</option>
+                            <option value="#3a0ca3">Purple</option>
+                            <option value="#7209b7">Magenta</option>
+                            <option value="#f72585">Pink</option>
+                            <option value="#4cc9f0">Cyan</option>
+                            <option value="#480ca8">Deep Purple</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="linkColorSelect" class="form-label">Link Color:</label>
+                        <select id="linkColorSelect" class="form-select form-select-sm">
+                            <option value="#999">Gray</option>
+                            <option value="#000">Black</option>
+                            <option value="#4361ee">Blue</option>
+                            <option value="#3a0ca3">Purple</option>
+                            <option value="#7209b7">Magenta</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="nodeSize" class="form-label">Node Size: <span id="nodeSizeValue">10</span></label>
+                        <input type="range" class="form-range" id="nodeSize" min="5" max="20" value="10">
+                    </div>
+                    <div class="control-group">
+                        <button id="centerGraphBtn" class="btn btn-primary btn-sm">Center Graph</button>
+                        <button id="resetGraphBtn" class="btn btn-outline-secondary btn-sm ms-2">Reset</button>
+                    </div>
+                    <div class="control-group">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="showLabelsSwitch" checked>
+                            <label class="form-check-label" for="showLabelsSwitch">Show Labels</label>
+                        </div>
+                    </div>
+                    <div id="dependencyTypes" class="mt-3">
+                        <h6>Dependency Types:</h6>
+                        <div class="dependency-legend">
+                            <span class="badge bg-primary">Calls</span>
+                            <span class="badge bg-success">Imports/Requires</span>
+                            <span class="badge bg-info">Extends/Inherits</span>
+                            <span class="badge bg-warning">References</span>
+                            <span class="badge bg-danger">Defines</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="tooltip" class="tooltip"></div>
+                <div id="loadingOverlay" class="loading-overlay hidden">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Processing files... This may take a while for large codebases.</p>
+                    <div class="progress mt-2" style="width: 50%;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <script>
+        // Global variables to store application state
+        let files = [];
+        let dependencies = [];
+        let fileTree = {};
+        let selectedFolder = null;
+        let simulation = null;
         
-        <!-- Controls for graph customization -->
-        <div class="controls" id="graph-controls">
-          <div class="control-group">
-            <label>Graph Layout</label>
-            <select id="layout-select" class="form-select form-select-sm">
-              <option value="hierarchical">Hierarchical</option>
-              <option value="force">Force Directed</option>
-              <option value="radial">Radial</option>
-            </select>
-          </div>
-          
-          <div class="control-group">
-            <label>Node Colors</label>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Files:</span>
-              <input type="color" id="file-node-color" value="#3B82F6">
-            </div>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Functions:</span>
-              <input type="color" id="function-node-color" value="#10B981">
-            </div>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Variables:</span>
-              <input type="color" id="variable-node-color" value="#F59E0B">
-            </div>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Classes:</span>
-              <input type="color" id="class-node-color" value="#8B5CF6">
-            </div>
-          </div>
-          
-          <div class="control-group">
-            <label>Edge Colors</label>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Calls:</span>
-              <input type="color" id="calls-edge-color" value="#EF4444">
-            </div>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Imports:</span>
-              <input type="color" id="imports-edge-color" value="#6366F1">
-            </div>
-            <div class="color-picker-group">
-              <span class="color-picker-label">Extends:</span>
-              <input type="color" id="extends-edge-color" value="#14B8A6">
-            </div>
-          </div>
-          
-          <div class="control-group">
-            <button id="center-graph-btn" class="button-primary">
-              <i class="bi bi-arrows-fullscreen me-2"></i>Center Graph
-            </button>
-          </div>
-        </div>
+        // DOM elements
+        const browseButton = document.getElementById('browseButton');
+        const folderInput = document.getElementById('folderInput');
+        const fileTreeElement = document.getElementById('fileTree');
+        const exportButton = document.getElementById('exportButton');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const progressBar = document.getElementById('progressBar');
+        const networkGraph = document.getElementById('network-graph');
+        const tooltip = document.getElementById('tooltip');
         
-        <!-- Legend -->
-        <div class="legend" id="graph-legend">
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #3B82F6;"></div>
-            <span>Files</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #10B981;"></div>
-            <span>Functions</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #F59E0B;"></div>
-            <span>Variables</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #8B5CF6;"></div>
-            <span>Classes</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #EF4444;"></div>
-            <span>Calls Relationship</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #6366F1;"></div>
-            <span>Import Relationship</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color" style="background-color: #14B8A6;"></div>
-            <span>Extends Relationship</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Progress overlay -->
-  <div id="progress-overlay" class="progress-overlay" style="display: none;">
-    <div class="spinner"></div>
-    <div class="progress-bar-container">
-      <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
-    </div>
-    <div id="progress-text">Processing files...</div>
-  </div>
-  
-  <!-- Performance warning for large codebases -->
-  <div id="performance-warning" class="performance-warning">
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    <span>Large codebase detected! Visualization may be slow.</span>
-  </div>
-  
-  <!-- Toast notification container -->
-  <div id="toast-container" class="toast-container"></div>
-  
-  <!-- Code viewer modal -->
-  <div id="code-modal" class="modal-overlay" style="display: none;">
-    <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title" id="code-modal-title">File Content</div>
-        <button class="modal-close" id="close-code-modal">&times;</button>
-      </div>
-      <div class="modal-content">
-        <pre id="code-viewer" class="code-viewer"></pre>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Custom context menu -->
-  <div id="context-menu" class="context-menu" style="display: none;">
-    <div class="context-menu-item" id="context-view-file">
-      <i class="bi bi-eye me-2"></i>View File
-    </div>
-    <div class="context-menu-item" id="context-focus-node">
-      <i class="bi bi-zoom-in me-2"></i>Focus on Dependencies
-    </div>
-  </div>
-  
-  <!-- Load the necessary libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/dist/vis-network.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vis-data@7.1.6/dist/vis-data.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.10.0/acorn.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn-walk/8.2.0/walk.min.js"></script>
-  
-  <script>
-    // Main JavaScript for the application
-    document.addEventListener('DOMContentLoaded', function() {
-      // DOM elements
-      const folderInput = document.getElementById('folder-input');
-      const selectFolderBtn = document.getElementById('select-folder-btn');
-      const exportCsvBtn = document.getElementById('export-csv-btn');
-      const fileTreeContainer = document.getElementById('file-tree-container');
-      const networkGraph = document.getElementById('network-graph');
-      const progressOverlay = document.getElementById('progress-overlay');
-      const progressBar = document.getElementById('progress-bar');
-      const progressText = document.getElementById('progress-text');
-      const performanceWarning = document.getElementById('performance-warning');
-      const layoutSelect = document.getElementById('layout-select');
-      const centerGraphBtn = document.getElementById('center-graph-btn');
-      const codeModal = document.getElementById('code-modal');
-      const codeModalTitle = document.getElementById('code-modal-title');
-      const codeViewer = document.getElementById('code-viewer');
-      const closeCodeModalBtn = document.getElementById('close-code-modal');
-      const contextMenu = document.getElementById('context-menu');
-      const contextViewFile = document.getElementById('context-view-file');
-      const contextFocusNode = document.getElementById('context-focus-node');
-      
-      // Color pickers
-      const fileNodeColor = document.getElementById('file-node-color');
-      const functionNodeColor = document.getElementById('function-node-color');
-      const variableNodeColor = document.getElementById('variable-node-color');
-      const classNodeColor = document.getElementById('class-node-color');
-      const callsEdgeColor = document.getElementById('calls-edge-color');
-      const importsEdgeColor = document.getElementById('imports-edge-color');
-      const extendsEdgeColor = document.getElementById('extends-edge-color');
-      
-      // Application state
-      let files = []; // All files in the codebase
-      let fileContents = {}; // Contents of each file
-      let dependencies = []; // Dependencies between files and code entities
-      let network = null; // vis.js network instance
-      let nodes = new vis.DataSet(); // Network nodes
-      let edges = new vis.DataSet(); // Network edges
-      let selectedNode = null; // Currently selected node
-      
-      // File type icons mapping
-      const fileIcons = {
-        js: 'bi-filetype-js',
-        jsx: 'bi-filetype-jsx',
-        ts: 'bi-filetype-tsx',
-        tsx: 'bi-filetype-tsx',
-        html: 'bi-filetype-html',
-        css: 'bi-filetype-css',
-        json: 'bi-filetype-json',
-        md: 'bi-markdown',
-        py: 'bi-filetype-py',
-        java: 'bi-filetype-java',
-        c: 'bi-file-code',
-        cpp: 'bi-file-code',
-        rb: 'bi-gem',
-        php: 'bi-filetype-php',
-        go: 'bi-file-code',
-        rust: 'bi-file-code',
-        default: 'bi-file-text'
-      };
-      
-      // Initialize the network graph
-      function initializeGraph() {
-        const container = document.getElementById('network-graph');
+        // Graph control elements
+        const nodeColorSelect = document.getElementById('nodeColorSelect');
+        const linkColorSelect = document.getElementById('linkColorSelect');
+        const nodeSizeSlider = document.getElementById('nodeSize');
+        const nodeSizeValue = document.getElementById('nodeSizeValue');
+        const centerGraphBtn = document.getElementById('centerGraphBtn');
+        const resetGraphBtn = document.getElementById('resetGraphBtn');
+        const showLabelsSwitch = document.getElementById('showLabelsSwitch');
         
-        // Create a network instance
-        const options = {
-          nodes: {
-            shape: 'dot',
-            size: 16,
-            font: {
-              size: 12,
-              face: 'sans-serif'
-            }
-          },
-          edges: {
-            width: 1,
-            arrows: {
-              to: { enabled: true, scaleFactor: 0.5 }
-            },
-            smooth: {
-              type: 'cubicBezier',
-              forceDirection: 'horizontal',
-              roundness: 0.4
-            }
-          },
-          physics: {
-            enabled: true,
-            solver: 'forceAtlas2Based',
-            stabilization: {
-              iterations: 200
-            }
-          },
-          interaction: {
-            hover: true,
-            tooltipDelay: 300,
-            zoomView: true,
-            dragView: true,
-            navigationButtons: true,
-            keyboard: {
-              enabled: true,
-              bindToWindow: false
-            }
-          },
-          layout: {
-            improvedLayout: true
-          }
+        // Graph configuration
+        let graphConfig = {
+            nodeColor: nodeColorSelect.value,
+            linkColor: linkColorSelect.value,
+            nodeSize: parseInt(nodeSizeSlider.value),
+            showLabels: showLabelsSwitch.checked
         };
         
-        // Create the network visualization
-        network = new vis.Network(container, { nodes, edges }, options);
-        
-        // Network event listeners
-        network.on('click', function(params) {
-          if (params.nodes.length > 0) {
-            selectedNode = params.nodes[0];
-          } else {
-            selectedNode = null;
-          }
-        });
-        
-        network.on('doubleClick', function(params) {
-          if (params.nodes.length > 0) {
-            const nodeId = params.nodes[0];
-            const node = nodes.get(nodeId);
+        // Initialize the application
+        function init() {
+            // Set up event listeners
+            browseButton.addEventListener('click', () => folderInput.click());
+            folderInput.addEventListener('change', handleFolderSelection);
+            exportButton.addEventListener('click', exportDependencies);
             
-            if (node.type === 'file' && node.content) {
-              openCodeViewer(node.label, node.content);
-            }
-          }
-        });
+            // Graph control event listeners
+            nodeColorSelect.addEventListener('change', updateGraphStyle);
+            linkColorSelect.addEventListener('change', updateGraphStyle);
+            nodeSizeSlider.addEventListener('input', updateNodeSize);
+            centerGraphBtn.addEventListener('click', centerGraph);
+            resetGraphBtn.addEventListener('click', resetGraph);
+            showLabelsSwitch.addEventListener('change', toggleLabels);
+            
+            // Initialize an empty graph
+            initializeGraph();
+        }
         
-        network.on('oncontext', function(params) {
-          params.event.preventDefault();
-          
-          if (params.nodes.length > 0) {
-            selectedNode = params.nodes[0];
+        // Handle folder selection from the input
+        function handleFolderSelection(event) {
+            const selectedFiles = Array.from(event.target.files);
             
-            const node = nodes.get(selectedNode);
+            if (selectedFiles.length === 0) return;
             
-            // Show context menu
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = params.event.clientX + 'px';
-            contextMenu.style.top = params.event.clientY + 'px';
+            // Show loading overlay
+            loadingOverlay.classList.remove('hidden');
+            progressBar.style.width = '0%';
             
-            // Enable/disable menu items based on node type
-            if (node.type === 'file' && node.content) {
-              contextViewFile.style.display = 'block';
-            } else {
-              contextViewFile.style.display = 'none';
-            }
-          }
-        });
-      }
-      
-      // Initialize event listeners
-      function initializeEventListeners() {
-        // Open file input when the browse button is clicked
-        selectFolderBtn.addEventListener('click', function() {
-          folderInput.click();
-        });
+            // Get the base folder
+            const firstFilePath = selectedFiles[0].webkitRelativePath;
+            const baseFolderName = firstFilePath.split('/')[0];
+            selectedFolder = baseFolderName;
+            
+            // Reset variables
+            files = [];
+            dependencies = [];
+            fileTree = { name: baseFolderName, type: 'folder', children: [] };
+            
+            // Process files in batches to avoid UI freezing
+            processFilesInBatches(selectedFiles, 0);
+        }
         
-        // Handle folder selection
-        folderInput.addEventListener('change', function(event) {
-          const selectedFiles = event.target.files;
-          
-          if (selectedFiles.length > 0) {
-            showProgressOverlay();
+        // Process files in batches to keep the UI responsive
+        function processFilesInBatches(selectedFiles, startIndex, batchSize = 100) {
+            const endIndex = Math.min(startIndex + batchSize, selectedFiles.length);
+            const batch = selectedFiles.slice(startIndex, endIndex);
             
-            // Check if it's a large codebase
-            const totalSize = Array.from(selectedFiles).reduce((total, file) => total + file.size, 0);
-            if (totalSize > 100 * 1024 * 1024) { // 100MB threshold for warning
-              performanceWarning.style.display = 'block';
-              setTimeout(() => {
-                performanceWarning.style.display = 'none';
-              }, 5000);
-            }
+            // Update progress
+            const progress = Math.floor((endIndex / selectedFiles.length) * 100);
+            progressBar.style.width = `${progress}%`;
             
-            // Process files in chunks for better performance
-            setTimeout(() => {
-              processFiles(selectedFiles);
-            }, 100);
-          }
-        });
-        
-        // Export dependencies as CSV
-        exportCsvBtn.addEventListener('click', function() {
-          exportDependenciesCSV();
-        });
-        
-        // Center the graph
-        centerGraphBtn.addEventListener('click', function() {
-          if (network) {
-            network.fit({
-              animation: {
-                duration: 800,
-                easingFunction: 'easeInOutQuad'
-              }
+            // Process batch
+            batch.forEach(file => {
+                const path = file.webkitRelativePath;
+                files.push({ path, file });
+                addToFileTree(fileTree, path.split('/').slice(1), file);
             });
-          }
-        });
-        
-        // Change graph layout
-        layoutSelect.addEventListener('change', function() {
-          const layout = layoutSelect.value;
-          updateGraphLayout(layout);
-        });
-        
-        // Update node and edge colors
-        fileNodeColor.addEventListener('change', updateGraphColors);
-        functionNodeColor.addEventListener('change', updateGraphColors);
-        variableNodeColor.addEventListener('change', updateGraphColors);
-        classNodeColor.addEventListener('change', updateGraphColors);
-        callsEdgeColor.addEventListener('change', updateGraphColors);
-        importsEdgeColor.addEventListener('change', updateGraphColors);
-        extendsEdgeColor.addEventListener('change', updateGraphColors);
-        
-        // Close code viewer modal
-        closeCodeModalBtn.addEventListener('click', function() {
-          codeModal.style.display = 'none';
-        });
-        
-        // Context menu items
-        contextViewFile.addEventListener('click', function() {
-          if (selectedNode) {
-            const node = nodes.get(selectedNode);
-            if (node.type === 'file' && node.content) {
-              openCodeViewer(node.label, node.content);
+            
+            if (endIndex < selectedFiles.length) {
+                // Continue with next batch
+                setTimeout(() => {
+                    processFilesInBatches(selectedFiles, endIndex, batchSize);
+                }, 0);
+            } else {
+                // All files processed, build dependencies
+                buildDependencies().then(() => {
+                    renderFileTree();
+                    updateGraph();
+                    
+                    // Enable export button
+                    exportButton.removeAttribute('disabled');
+                    
+                    // Hide loading overlay
+                    loadingOverlay.classList.add('hidden');
+                });
             }
-          }
-          hideContextMenu();
-        });
+        }
         
-        contextFocusNode.addEventListener('click', function() {
-          if (selectedNode) {
-            focusOnNodeDependencies(selectedNode);
-          }
-          hideContextMenu();
-        });
+        // Add a file to the file tree structure
+        function addToFileTree(node, pathParts, file) {
+            if (pathParts.length === 0) return;
+            
+            const currentPart = pathParts[0];
+            const remainingParts = pathParts.slice(1);
+            
+            // Find existing child
+            let child = node.children.find(c => c.name === currentPart);
+            
+            if (!child) {
+                // Determine if it's a file or folder
+                const isFile = pathParts.length === 1;
+                child = {
+                    name: currentPart,
+                    type: isFile ? 'file' : 'folder',
+                    children: [],
+                    parent: node
+                };
+                
+                if (isFile) {
+                    child.file = file;
+                    child.ext = currentPart.includes('.') ? 
+                        currentPart.split('.').pop().toLowerCase() : '';
+                }
+                
+                node.children.push(child);
+            }
+            
+            if (remainingParts.length > 0) {
+                addToFileTree(child, remainingParts, file);
+            }
+        }
         
-        // Hide context menu when clicking elsewhere
-        document.addEventListener('click', function() {
-          hideContextMenu();
-        });
+        // Render the file tree in the UI
+        function renderFileTree() {
+            fileTreeElement.innerHTML = '';
+            
+            const createNodeElement = (node, level = 0) => {
+                const div = document.createElement('div');
+                div.className = `tree-node ${node.type}`;
+                div.style.paddingLeft = `${level * 15}px`;
+                
+                // Icon based on type
+                let icon = '';
+                if (node.type === 'folder') {
+                    icon = '<i class="bi bi-folder-fill file-icon"></i>';
+                } else {
+                    // Choose icon based on file extension
+                    switch (node.ext) {
+                        case 'js':
+                            icon = '<i class="bi bi-filetype-js file-icon"></i>';
+                            break;
+                        case 'html':
+                            icon = '<i class="bi bi-filetype-html file-icon"></i>';
+                            break;
+                        case 'css':
+                            icon = '<i class="bi bi-filetype-css file-icon"></i>';
+                            break;
+                        case 'json':
+                            icon = '<i class="bi bi-filetype-json file-icon"></i>';
+                            break;
+                        case 'md':
+                            icon = '<i class="bi bi-markdown-fill file-icon"></i>';
+                            break;
+                        default:
+                            icon = '<i class="bi bi-file-earmark-text file-icon"></i>';
+                    }
+                }
+                
+                div.innerHTML = `${icon} ${node.name}`;
+                
+                // Add click handler
+                if (node.type === 'folder') {
+                    div.addEventListener('click', () => {
+                        // Toggle visibility of children
+                        const childContainer = div.nextElementSibling;
+                        if (childContainer) {
+                            childContainer.classList.toggle('hidden');
+                            // Toggle folder icon
+                            const icon = div.querySelector('.bi');
+                            if (icon.classList.contains('bi-folder-fill')) {
+                                icon.classList.replace('bi-folder-fill', 'bi-folder2-open');
+                            } else {
+                                icon.classList.replace('bi-folder2-open', 'bi-folder-fill');
+                            }
+                        }
+                    });
+                } else {
+                    // If file, highlight in the graph
+                    div.addEventListener('click', () => {
+                        highlightNodeInGraph(node.name);
+                    });
+                }
+                
+                return div;
+            };
+            
+            const renderNode = (node, container, level = 0) => {
+                const nodeElement = createNodeElement(node, level);
+                container.appendChild(nodeElement);
+                
+                if (node.children && node.children.length > 0) {
+                    const childContainer = document.createElement('div');
+                    childContainer.className = node.type === 'folder' ? 'child-container' : '';
+                    childContainer.style.paddingLeft = '15px';
+                    
+                    // Sort children: folders first, then files
+                    const sortedChildren = [...node.children].sort((a, b) => {
+                        if (a.type === b.type) {
+                            return a.name.localeCompare(b.name);
+                        }
+                        return a.type === 'folder' ? -1 : 1;
+                    });
+                    
+                    sortedChildren.forEach(child => {
+                        renderNode(child, childContainer, level + 1);
+                    });
+                    
+                    container.appendChild(childContainer);
+                }
+            };
+            
+            renderNode(fileTree, fileTreeElement);
+        }
+        
+        // Build dependency relationships between files
+        async function buildDependencies() {
+            const textFiles = files.filter(f => {
+                const ext = f.path.split('.').pop().toLowerCase();
+                return ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'rb', 'go', 'html', 'css'].includes(ext);
+            });
+            
+            // Process each file to extract dependencies
+            for (let i = 0; i < textFiles.length; i++) {
+                const file = textFiles[i];
+                try {
+                    const content = await readFileContent(file.file);
+                    const deps = extractDependencies(file.path, content);
+                    dependencies.push(...deps);
+                } catch (error) {
+                    console.error(`Error processing file ${file.path}:`, error);
+                }
+                
+                // Update progress bar for dependencies extraction
+                const progress = Math.floor((i / textFiles.length) * 100);
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            return dependencies;
+        }
+        
+        // Read file content
+        function readFileContent(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file);
+            });
+        }
+        
+        // Extract dependencies from file content
+        function extractDependencies(filePath, content) {
+            const filename = filePath.split('/').pop();
+            const ext = filename.split('.').pop().toLowerCase();
+            const extractedDeps = [];
+            
+            // Handle different file types differently
+            if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) {
+                // JavaScript/TypeScript imports
+                extractImportDependencies(filePath, content, extractedDeps);
+                
+                // Function calls
+                extractFunctionCalls(filePath, content, extractedDeps);
+                
+                // Class definitions and extensions
+                extractClassDependencies(filePath, content, extractedDeps);
+                
+                // Variable references
+                extractVariableReferences(filePath, content, extractedDeps);
+            } else if (['py'].includes(ext)) {
+                // Python imports
+                extractPythonImports(filePath, content, extractedDeps);
+            } else if (['java'].includes(ext)) {
+                // Java imports
+                extractJavaImports(filePath, content, extractedDeps);
+            } else if (['html'].includes(ext)) {
+                // HTML script and link tags
+                extractHtmlDependencies(filePath, content, extractedDeps);
+            } else if (['css'].includes(ext)) {
+                // CSS imports
+                extractCssDependencies(filePath, content, extractedDeps);
+            }
+            
+            return extractedDeps;
+        }
+        
+        // Extract JavaScript/TypeScript imports
+        function extractImportDependencies(filePath, content, dependencies) {
+            // ES6 imports
+            const importRegex = /import\s+(?:{([^}]+)}|\*\s+as\s+([a-zA-Z0-9_$]+)|([a-zA-Z0-9_$]+))\s+from\s+['"]([^'"]+)['"]/g;
+            let match;
+            
+            while ((match = importRegex.exec(content)) !== null) {
+                const importedItems = match[1] ? match[1].split(',').map(s => s.trim()) : [];
+                const importedNamespace = match[2];
+                const importedDefault = match[3];
+                const importPath = match[4];
+                
+                // Add dependency for the import itself
+                dependencies.push({
+                    source: filePath,
+                    target: resolveImportPath(filePath, importPath),
+                    type: 'import',
+                    label: 'imports'
+                });
+                
+                // Add named imports
+                if (importedItems.length > 0) {
+                    importedItems.forEach(item => {
+                        // Handle "as" aliases
+                        const actualItem = item.split(' as ')[0].trim();
+                        dependencies.push({
+                            source: filePath,
+                            target: resolveImportPath(filePath, importPath) + '#' + actualItem,
+                            type: 'reference',
+                            label: 'references'
+                        });
+                    });
+                }
+                
+                // Add namespace import
+                if (importedNamespace) {
+                    dependencies.push({
+                        source: filePath,
+                        target: resolveImportPath(filePath, importPath) + '#*',
+                        type: 'reference',
+                        label: 'references'
+                    });
+                }
+                
+                // Add default import
+                if (importedDefault) {
+                    dependencies.push({
+                        source: filePath,
+                        target: resolveImportPath(filePath, importPath) + '#default',
+                        type: 'reference',
+                        label: 'references'
+                    });
+                }
+            }
+            
+            // CommonJS require
+            const requireRegex = /(?:const|let|var)\s+(?:{([^}]+)}|([a-zA-Z0-9_$]+))\s*=\s*require\(['"]([^'"]+)['"]\)/g;
+            
+            while ((match = requireRegex.exec(content)) !== null) {
+                const importedItems = match[1] ? match[1].split(',').map(s => s.trim()) : [];
+                const importedModule = match[2];
+                const importPath = match[3];
+                
+                dependencies.push({
+                    source: filePath,
+                    target: resolveImportPath(filePath, importPath),
+                    type: 'import',
+                    label: 'requires'
+                });
+                
+                if (importedItems.length > 0) {
+                    importedItems.forEach(item => {
+                        const actualItem = item.split(':')[0].trim();
+                        dependencies.push({
+                            source: filePath,
+                            target: resolveImportPath(filePath, importPath) + '#' + actualItem,
+                            type: 'reference',
+                            label: 'references'
+                        });
+                    });
+                }
+                
+                if (importedModule) {
+                    dependencies.push({
+                        source: filePath,
+                        target: resolveImportPath(filePath, importPath) + '#*',
+                        type: 'reference',
+                        label: 'references'
+                    });
+                }
+            }
+        }
+        
+        // Extract function calls
+        function extractFunctionCalls(filePath, content, dependencies) {
+            // Simple function call detection
+            const functionCallRegex = /(?<!['"])([a-zA-Z0-9_$]+)(?<!['"])(\.[a-zA-Z0-9_$]+)*\s*\(/g;
+            let match;
+            
+            while ((match = functionCallRegex.exec(content)) !== null) {
+                const fullMatch = match[0];
+                const baseFunction = match[1];
+                
+                // Ignore common keywords and built-ins
+                const ignoreList = ['if', 'for', 'while', 'switch', 'function', 'return', 'const', 'let', 'var', 'console'];
+                if (!ignoreList.includes(baseFunction)) {
+                    dependencies.push({
+                        source: filePath,
+                        target: `${filePath}#${baseFunction}`,
+                        type: 'call',
+                        label: 'calls'
+                    });
+                }
+            }
+        }
+        
+        // Extract class dependencies
+        function extractClassDependencies(filePath, content, dependencies) {
+            // Class definition
+            const classDefRegex = /class\s+([a-zA-Z0-9_$]+)(?:\s+extends\s+([a-zA-Z0-9_$]+))?/g;
+            let match;
+            
+            while ((match = classDefRegex.exec(content)) !== null) {
+                const className = match[1];
+                const parentClass = match[2];
+                
+                // Define the class
+                dependencies.push({
+                    source: filePath,
+                    target: `${filePath}#${className}`,
+                    type: 'define',
+                    label: 'defines'
+                });
+                
+                // If it extends a parent class
+                if (parentClass) {
+                    dependencies.push({
+                        source: `${filePath}#${className}`,
+                        target: `${filePath}#${parentClass}`,
+                        type: 'extend',
+                        label: 'extends'
+                    });
+                }
+            }
+        }
+        
+        // Extract variable references
+        function extractVariableReferences(filePath, content, dependencies) {
+            // Variable definitions
+            const varDefRegex = /(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=/g;
+            let match;
+            
+            while ((match = varDefRegex.exec(content)) !== null) {
+                const varName = match[1];
+                
+                dependencies.push({
+                    source: filePath,
+                    target: `${filePath}#${varName}`,
+                    type: 'define',
+                    label: 'defines'
+                });
+            }
+        }
+        
+        // Extract Python imports
+        function extractPythonImports(filePath, content, dependencies) {
+            // import statements
+            const importRegex = /import\s+([a-zA-Z0-9_$.]+)(?:\s+as\s+([a-zA-Z0-9_$]+))?/g;
+            let match;
+            
+            while ((match = importRegex.exec(content)) !== null) {
+                const module = match[1];
+                
+                dependencies.push({
+                    source: filePath,
+                    target: `${module}`,
+                    type: 'import',
+                    label: 'imports'
+                });
+            }
+            
+            // from ... import statements
+            const fromImportRegex = /from\s+([a-zA-Z0-9_$.]+)\s+import\s+(?:([a-zA-Z0-9_$, ]+)|(\*))/g;
+            
+            while ((match = fromImportRegex.exec(content)) !== null) {
+                const module = match[1];
+                const imports = match[2] ? match[2].split(',').map(s => s.trim()) : [];
+                const importAll = match[3] === '*';
+                
+                dependencies.push({
+                    source: filePath,
+                    target: `${module}`,
+                    type: 'import',
+                    label: 'imports'
+                });
+                
+                if (importAll) {
+                    dependencies.push({
+                        source: filePath,
+                        target: `${module}#*`,
+                        type: 'reference',
+                        label: 'references'
+                    });
+                } else {
+                    imports.forEach(item => {
+                        dependencies.push({
+                            source: filePath,
+                            target: `${module}#${item}`,
+                            type: 'reference',
+                            label: 'references'
+                        });
+                    });
+                }
+            }
+        }
+        
+        // Extract Java imports
+        function extractJavaImports(filePath, content, dependencies) {
+            const importRegex = /import\s+(?:static\s+)?([a-zA-Z0-9_$.]+)(?:\.\*)?;/g;
+            let match;
+            
+            while ((match = importRegex.exec(content)) !== null) {
+                const importPath = match[1];
+                
+                dependencies.push({
+                    source: filePath,
+                    target: importPath.replace(/\./g, '/'),
+                    type: 'import',
+                    label: 'imports'
+                });
+            }
+        }
+        
+        // Extract HTML dependencies
+        function extractHtmlDependencies(filePath, content, dependencies) {
+            // Script tags
+            const scriptRegex = /<script(?:[^>]*src=["']([^"']+)["'][^>]*)?>(?:<\/script>)?/g;
+            let match;
+            
+            while ((match = scriptRegex.exec(content)) !== null) {
+                const src = match[1];
+                if (src) {
+                    dependencies.push({
+                        source: filePath,
+                        target: src,
+                        type: 'import',
+                        label: 'includes'
+                    });
+                }
+            }
+            
+            // Link tags (CSS)
+            const linkRegex = /<link(?:[^>]*href=["']([^"']+)["'][^>]*rel=["']stylesheet["'][^>]*|[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*)>/g;
+            
+            while ((match = linkRegex.exec(content)) !== null) {
+                const href = match[1] || match[2];
+                if (href) {
+                    dependencies.push({
+                        source: filePath,
+                        target: href,
+                        type: 'import',
+                        label: 'includes'
+                    });
+                }
+            }
+        }
+        
+        // Extract CSS dependencies
+        function extractCssDependencies(filePath, content, dependencies) {
+            const importRegex = /@import\s+(?:url\()?["']([^"']+)["'](?:\))?/g;
+            let match;
+            
+            while ((match = importRegex.exec(content)) !== null) {
+                const importPath = match[1];
+                
+                dependencies.push({
+                    source: filePath,
+                    target: importPath,
+                    type: 'import',
+                    label: 'imports'
+                });
+            }
+        }
+        
+        // Resolve relative import paths
+        function resolveImportPath(sourcePath, importPath) {
+            if (importPath.startsWith('.')) {
+                const parts = sourcePath.split('/');
+                parts.pop(); // Remove filename
+                
+                const importParts = importPath.split('/');
+                
+                importParts.forEach(part => {
+                    if (part === '..') {
+                        parts.pop();
+                    } else if (part === '.') {
+                        // Current directory, do nothing
+                    } else {
+                        parts.push(part);
+                    }
+                });
+                
+                return parts.join('/');
+            }
+            
+            return importPath;
+        }
+        
+        // Initialize the D3.js graph
+        function initializeGraph() {
+            // Clear previous graph
+            d3.select('#network-graph').selectAll('*').remove();
+            
+            // Create SVG element
+            const svg = d3.select('#network-graph')
+                .append('svg')
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .call(d3.zoom().on('zoom', (event) => {
+                    svg.attr('transform', event.transform);
+                }))
+                .append('g');
+            
+            // Add markers for arrows
+            svg.append('defs').append('marker')
+                .attr('id', 'arrowhead')
+                .attr('viewBox', '-0 -5 10 10')
+                .attr('refX', 20)
+                .attr('refY', 0)
+                .attr('orient', 'auto')
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('xoverflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+                .attr('fill', '#999')
+                .style('stroke', 'none');
+            
+            // Return the created SVG
+            return svg;
+        }
+        
+        // Update graph with current data
+        function updateGraph() {
+            // Create nodes and links from dependencies
+            const nodes = new Map();
+            const links = [];
+            
+            // Extract unique nodes
+            dependencies.forEach(dep => {
+                if (!nodes.has(dep.source)) {
+                    nodes.set(dep.source, {
+                        id: dep.source,
+                        name: dep.source.split('/').pop(),
+                        group: getNodeGroup(dep.source)
+                    });
+                }
+                
+                if (!nodes.has(dep.target)) {
+                    nodes.set(dep.target, {
+                        id: dep.target,
+                        name: dep.target.split('/').pop(),
+                        group: getNodeGroup(dep.target)
+                    });
+                }
+                
+                links.push({
+                    source: dep.source,
+                    target: dep.target,
+                    type: dep.type,
+                    value: 1,
+                    label: dep.label
+                });
+            });
+            
+            // Convert nodes to array
+            const nodesArray = Array.from(nodes.values());
+            
+            // Clear previous graph
+            const svg = d3.select('#network-graph').select('svg').select('g');
+            svg.selectAll('*').remove();
+            
+            // Create the simulation
+            simulation = d3.forceSimulation(nodesArray)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(
+                    networkGraph.clientWidth / 2, 
+                    networkGraph.clientHeight / 2
+                ))
+                .force('collision', d3.forceCollide().radius(30));
+            
+            // Draw links first so they appear behind nodes
+            const link = svg.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('stroke', getLinkColor)
+                .attr('marker-end', 'url(#arrowhead)');
+            
+            // Update arrowhead color
+            svg.select('#arrowhead path')
+                .attr('fill', graphConfig.linkColor);
+            
+            // Draw nodes
+            const node = svg.append('g')
+                .attr('class', 'nodes')
+                .selectAll('g')
+                .data(nodesArray)
+                .enter().append('g');
+            
+            // Add circles to each node
+            node.append('circle')
+                .attr('class', 'node')
+                .attr('r', getNodeRadius)
+                .attr('fill', getNodeColor)
+                .on('mouseover', showNodeTooltip)
+                .on('mouseout', hideTooltip)
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', dragging)
+                    .on('end', dragEnded));
+            
+            // Add labels to nodes if enabled
+            if (graphConfig.showLabels) {
+                node.append('text')
+                    .text(d => {
+                        // Truncate long names
+                        const name = d.name;
+                        return name.length > 20 ? name.substring(0, 17) + '...' : name;
+                    })
+                    .attr('dx', 12)
+                    .attr('dy', '.35em')
+                    .style('font-size', '10px')
+                    .style('fill', '#333');
+            }
+            
+            // Update the simulation on each tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                node
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+        }
+        
+        // Get node color based on file type
+        function getNodeColor(d) {
+            return graphConfig.nodeColor;
+        }
+        
+        // Get node radius based on importance
+        function getNodeRadius(d) {
+            return graphConfig.nodeSize;
+        }
+        
+        // Get link color based on relationship type
+        function getLinkColor(d) {
+            switch (d.type) {
+                case 'import':
+                    return '#4cc9f0';
+                case 'call':
+                    return '#4361ee';
+                case 'extend':
+                    return '#7209b7';
+                case 'reference':
+                    return '#f72585';
+                case 'define':
+                    return '#3a0ca3';
+                default:
+                    return graphConfig.linkColor;
+            }
+        }
+        
+        // Get node group based on file extension
+        function getNodeGroup(path) {
+            const ext = path.split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'js':
+                    return 1;
+                case 'jsx':
+                    return 1;
+                case 'ts':
+                    return 2;
+                case 'tsx':
+                    return 2;
+                case 'css':
+                    return 3;
+                case 'html':
+                    return 4;
+                case 'json':
+                    return 5;
+                default:
+                    return 0;
+            }
+        }
+        
+        // Show tooltip with node details
+        function showNodeTooltip(event, d) {
+            const relatedDeps = dependencies.filter(dep => 
+                dep.source === d.id || dep.target === d.id
+            );
+            
+            // Group dependencies by type
+            const grouped = {};
+            relatedDeps.forEach(dep => {
+                const type = dep.type;
+                if (!grouped[type]) grouped[type] = [];
+                
+                if (dep.source === d.id) {
+                    grouped[type].push({
+                        direction: 'outgoing',
+                        node: dep.target,
+                        label: dep.label
+                    });
+                } else {
+                    grouped[type].push({
+                        direction: 'incoming',
+                        node: dep.source,
+                        label: dep.label
+                    });
+                }
+            });
+            
+            // Build tooltip content
+            let content = `<div><strong>${d.name}</strong></div>`;
+            content += `<div class="text-muted small">${d.id}</div>`;
+            content += `<hr>`;
+            
+            // Add dependency sections
+            for (const type in grouped) {
+                const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+                content += `<div><strong>${typeName} (${grouped[type].length}):</strong></div>`;
+                
+                // Limit to top 5 for each type to prevent huge tooltips
+                const limited = grouped[type].slice(0, 5);
+                limited.forEach(dep => {
+                    const nodeName = dep.node.split('/').pop();
+                    const direction = dep.direction === 'outgoing' ? '→' : '←';
+                    content += `<div class="small">${direction} ${nodeName} (${dep.label})</div>`;
+                });
+                
+                if (grouped[type].length > 5) {
+                    content += `<div class="small text-muted">...and ${grouped[type].length - 5} more</div>`;
+                }
+                
+                content += `<hr>`;
+            }
+            
+            // Show tooltip
+            tooltip.innerHTML = content;
+            tooltip.style.left = `${event.pageX + 10}px`;
+            tooltip.style.top = `${event.pageY + 10}px`;
+            tooltip.style.opacity = 1;
+        }
+        
+        // Hide tooltip
+        function hideTooltip() {
+            tooltip.style.opacity = 0;
+        }
+        
+        // Highlight node in graph
+        function highlightNodeInGraph(nodeName) {
+            // Find nodes containing the name
+            const nodes = d3.selectAll('.node');
+            const matchingNodes = [];
+            
+            nodes.each(function(d) {
+                if (d.name.includes(nodeName)) {
+                    matchingNodes.push(this);
+                }
+            });
+            
+            // Reset all nodes first
+            nodes.attr('stroke-width', 1.5)
+                .attr('r', getNodeRadius);
+            
+            // Highlight matching nodes
+            if (matchingNodes.length > 0) {
+                matchingNodes.forEach(node => {
+                    d3.select(node)
+                        .attr('stroke-width', 3)
+                        .attr('stroke', '#f72585')
+                        .attr('r', graphConfig.nodeSize * 1.5);
+                });
+                
+                // Also highlight in tree
+                const treeNodes = document.querySelectorAll('.tree-node');
+                treeNodes.forEach(node => {
+                    if (node.textContent.includes(nodeName)) {
+                        node.style.backgroundColor = 'rgba(247, 37, 133, 0.2)';
+                    } else {
+                        node.style.backgroundColor = '';
+                    }
+                });
+            }
+        }
+        
+        // Drag handlers for nodes
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragging(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // Update graph styles
+        function updateGraphStyle() {
+            graphConfig.nodeColor = nodeColorSelect.value;
+            graphConfig.linkColor = linkColorSelect.value;
+            
+            // Update nodes and links
+            d3.selectAll('.node')
+                .attr('fill', getNodeColor);
+            
+            d3.selectAll('.link')
+                .attr('stroke', getLinkColor);
+            
+            // Update arrowhead color
+            d3.select('#arrowhead path')
+                .attr('fill', graphConfig.linkColor);
+        }
+        
+        // Update node size
+        function updateNodeSize() {
+            graphConfig.nodeSize = parseInt(nodeSizeSlider.value);
+            nodeSizeValue.textContent = graphConfig.nodeSize;
+            
+            d3.selectAll('.node')
+                .attr('r', getNodeRadius);
+        }
+        
+        // Center the graph visualization
+        function centerGraph() {
+            const svg = d3.select('#network-graph').select('svg');
+            
+            const zoom = d3.zoom()
+                .on('zoom', (event) => {
+                    svg.select('g').attr('transform', event.transform);
+                });
+            
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(
+                    networkGraph.clientWidth / 2,
+                    networkGraph.clientHeight / 2
+                ).scale(1)
+            );
+        }
+        
+        // Reset graph settings and position
+        function resetGraph() {
+            // Reset graph config
+            nodeColorSelect.value = '#4361ee';
+            linkColorSelect.value = '#999';
+            nodeSizeSlider.value = 10;
+            nodeSizeValue.textContent = 10;
+            showLabelsSwitch.checked = true;
+            
+            graphConfig = {
+                nodeColor: '#4361ee',
+                linkColor: '#999',
+                nodeSize: 10,
+                showLabels: true
+            };
+            
+            // Redraw the graph
+            updateGraph();
+            
+            // Center the graph
+            centerGraph();
+        }
+        
+        // Toggle labels
+        function toggleLabels() {
+            graphConfig.showLabels = showLabelsSwitch.checked;
+            updateGraph();
+        }
+        
+        // Export dependencies to CSV
+        function exportDependencies() {
+            // Convert dependencies to CSV format
+            const csvData = [
+                ['Source', 'Target', 'Type', 'Relationship']
+            ];
+            
+            dependencies.forEach(dep => {
+                csvData.push([
+                    dep.source,
+                    dep.target,
+                    dep.type,
+                    dep.label
+                ]);
+            });
+            
+            // Generate CSV content
+            const csvContent = Papa.unparse(csvData);
+            
+            // Create blob and download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `codebase-dependencies-${selectedFolder}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Initialize the application when the page loads
+        window.addEventListener('load', init);
         
         // Handle window resize
-        window.addEventListener('resize', function() {
-          if (network) {
-            network.redraw();
-          }
-        });
-      }
-      
-      // Process files from the selected folder
-      function processFiles(fileList) {
-        files = Array.from(fileList);
-        fileContents = {};
-        dependencies = [];
-        
-        const totalFiles = files.length;
-        let processedFiles = 0;
-        
-        // Update progress
-        function updateProgress() {
-          const progress = Math.round((processedFiles / totalFiles) * 100);
-          progressBar.style.width = progress + '%';
-          progressText.innerText = `Processing files: ${processedFiles}/${totalFiles}`;
-        }
-        
-        // Step 1: Read file contents
-        const readPromises = files.map(file => {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-              const content = e.target.result;
-              const relativePath = file.webkitRelativePath || file.name;
-              
-              fileContents[relativePath] = content;
-              processedFiles++;
-              updateProgress();
-              
-              resolve({
-                path: relativePath,
-                content: content,
-                size: file.size
-              });
-            };
-            
-            reader.onerror = function() {
-              processedFiles++;
-              updateProgress();
-              
-              resolve({
-                path: file.webkitRelativePath || file.name,
-                content: null,
-                size: file.size,
-                error: true
-              });
-            };
-            
-            reader.readAsText(file);
-          });
-        });
-        
-        // Execute all read operations
-        Promise.all(readPromises).then(results => {
-          // Update progress status
-          progressText.innerText = 'Building file tree...';
-          
-          // Build file tree
-          buildFileTree(results);
-          
-          // Update progress status
-          progressText.innerText = 'Analyzing dependencies...';
-          
-          // Analyze dependencies
-          setTimeout(() => {
-            analyzeDependencies(results);
-            
-            // Build graph
-            progressText.innerText = 'Building network graph...';
-            setTimeout(() => {
-              buildNetworkGraph();
-              
-              // Hide progress overlay
-              hideProgressOverlay();
-              
-              // Show success message
-              showToast('Success', `Loaded ${totalFiles} files from the codebase`, 'success');
-            }, 100);
-          }, 100);
-        });
-      }
-      
-      // Build file tree UI
-      function buildFileTree(files) {
-        // Create a tree structure
-        const tree = {};
-        
-        files.forEach(file => {
-          const pathParts = file.path.split('/');
-          let currentLevel = tree;
-          
-          // Build tree structure
-          for (let i = 0; i < pathParts.length; i++) {
-            const part = pathParts[i];
-            
-            if (i === pathParts.length - 1) {
-              // It's a file
-              currentLevel[part] = {
-                type: 'file',
-                path: file.path,
-                size: file.size,
-                error: file.error || false
-              };
-            } else {
-              // It's a directory
-              if (!currentLevel[part]) {
-                currentLevel[part] = {
-                  type: 'directory',
-                  children: {}
-                };
-              }
-              currentLevel = currentLevel[part].children;
+        window.addEventListener('resize', () => {
+            if (simulation) {
+                simulation
+                    .force('center', d3.forceCenter(
+                        networkGraph.clientWidth / 2,
+                        networkGraph.clientHeight / 2
+                    ))
+                    .restart();
             }
-          }
         });
-        
-        // Clear the current tree
-        fileTreeContainer.innerHTML = '';
-        
-        // Build the HTML for the tree
-        const rootUl = document.createElement('ul');
-        rootUl.className = 'file-tree';
-        
-        buildTreeHtml(tree, rootUl);
-        
-        fileTreeContainer.appendChild(rootUl);
-      }
-      
-      // Build HTML for the file tree
-      function buildTreeHtml(node, parentElement) {
-        Object.keys(node).sort((a, b) => {
-          // Sort directories first
-          const nodeA = node[a];
-          const nodeB = node[b];
-          
-          if (nodeA.type === 'directory' && nodeB.type !== 'directory') {
-            return -1;
-          }
-          if (nodeA.type !== 'directory' && nodeB.type === 'directory') {
-            return 1;
-          }
-          
-          return a.localeCompare(b);
-        }).forEach(key => {
-          const item = node[key];
-          const li = document.createElement('li');
-          
-          if (item.type === 'directory') {
-            li.className = 'file-tree-item collapsed';
-            
-            const itemContent = document.createElement('div');
-            itemContent.className = 'd-flex align-items-center';
-            
-            const expandIcon = document.createElement('i');
-            expandIcon.className = 'bi bi-chevron-down expandable';
-            itemContent.appendChild(expandIcon);
-            
-            const folderIcon = document.createElement('i');
-            folderIcon.className = 'bi bi-folder folder-icon file-icon';
-            itemContent.appendChild(folderIcon);
-            
-            const label = document.createElement('span');
-            label.textContent = key;
-            itemContent.appendChild(label);
-            
-            li.appendChild(itemContent);
-            
-            // Add children
-            const childrenUl = document.createElement('ul');
-            childrenUl.style.display = 'none';
-            buildTreeHtml(item.children, childrenUl);
-            li.appendChild(childrenUl);
-            
-            // Toggle expand/collapse
-            itemContent.addEventListener('click', function() {
-              li.classList.toggle('collapsed');
-              childrenUl.style.display = li.classList.contains('collapsed') ? 'none' : 'block';
-              
-              // Change folder icon
-              folderIcon.className = li.classList.contains('collapsed') 
-                ? 'bi bi-folder folder-icon file-icon' 
-                : 'bi bi-folder2-open folder-icon file-icon';
-              
-              // Change expand icon
-              expandIcon.style.transform = li.classList.contains('collapsed') ? 'rotate(-90deg)' : '';
-            });
-            
-          } else {
-            // It's a file
-            li.className = 'file-tree-item';
-            
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'd-flex align-items-center';
-            
-            // Add empty space where the expand icon would be
-            const emptyExpand = document.createElement('div');
-            emptyExpand.className = 'expandable';
-            itemDiv.appendChild(emptyExpand);
-            
-            // File icon based on extension
-            const fileIcon = document.createElement('i');
-            const extension = key.split('.').pop().toLowerCase();
-            fileIcon.className = `bi ${fileIcons[extension] || fileIcons.default} file-icon-default file-icon`;
-            itemDiv.appendChild(fileIcon);
-            
-            const label = document.createElement('span');
-            label.textContent = key;
-            itemDiv.appendChild(label);
-            
-            li.appendChild(itemDiv);
-            
-            // Handle file click
-            li.addEventListener('click', function() {
-              // Remove selected class from all file items
-              const fileItems = document.querySelectorAll('.file-tree-item');
-              fileItems.forEach(item => item.classList.remove('selected'));
-              
-              // Add selected class to this item
-              li.classList.add('selected');
-              
-              // If file content is available, highlight corresponding node
-              if (fileContents[item.path]) {
-                // Find and highlight the corresponding node in the graph
-                const fileNodes = nodes.get({
-                  filter: node => node.type === 'file' && node.path === item.path
-                });
-                
-                if (fileNodes.length > 0) {
-                  const fileNodeId = fileNodes[0].id;
-                  network.selectNodes([fileNodeId]);
-                  network.focus(fileNodeId, {
-                    scale: 1.0,
-                    animation: true
-                  });
-                }
-              }
-              
-              // Open file content if available
-              if (fileContents[item.path]) {
-                openCodeViewer(key, fileContents[item.path]);
-              }
-            });
-          }
-          
-          parentElement.appendChild(li);
-        });
-      }
-      
-      // Analyze code dependencies
-      function analyzeDependencies(files) {
-        dependencies = [];
-        
-        // Process each file to find dependencies
-        files.forEach(file => {
-          if (!file.content || file.error) return;
-          
-          const filePath = file.path;
-          const extension = filePath.split('.').pop().toLowerCase();
-          
-          // Focus on common web development file types
-          if (['js', 'jsx', 'ts', 'tsx', 'html', 'css', 'vue', 'py', 'java', 'php', 'rb', 'go', 'c', 'cpp'].includes(extension)) {
-            // JavaScript/TypeScript analysis using Acorn
-            if (['js', 'jsx', 'ts', 'tsx'].includes(extension)) {
-              try {
-                analyzeJavaScript(filePath, file.content);
-              } catch (e) {
-                console.warn(`Error parsing ${filePath}:`, e);
-              }
-            }
-            
-            // HTML analysis
-            else if (extension === 'html') {
-              analyzeHTML(filePath, file.content);
-            }
-            
-            // CSS analysis
-            else if (extension === 'css') {
-              analyzeCSS(filePath, file.content);
-            }
-            
-            // Simple text-based analysis for other file types
-            else {
-              analyzeGenericCode(filePath, file.content);
-            }
-          }
-        });
-      }
-      
-      // JavaScript/TypeScript analysis using Acorn
-      function analyzeJavaScript(filePath, content) {
-        try {
-          // Try to parse the JavaScript code
-          const ast = acorn.parse(content, {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            locations: true
-          });
-          
-          // Extract imports/requires
-          acorn.walk.simple(ast, {
-            ImportDeclaration(node) {
-              const source = node.source.value;
-              dependencies.push({
-                source: filePath,
-                target: resolveImportPath(filePath, source),
-                type: 'imports',
-                sourceType: 'file',
-                targetType: 'file'
-              });
-              
-              // Track what specific identifiers were imported
-              node.specifiers.forEach(specifier => {
-                if (specifier.type === 'ImportSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
-                  const importedName = specifier.imported ? specifier.imported.name : specifier.local.name;
-                  
-                  dependencies.push({
-                    source: `${filePath}:${specifier.local.name}`,
-                    target: `${resolveImportPath(filePath, source)}:${importedName}`,
-                    type: 'imports',
-                    sourceType: 'variable',
-                    targetType: 'variable'
-                  });
-                }
-              });
-            },
-            
-            CallExpression(node) {
-              // Handle require() calls
-              if (node.callee.type === 'Identifier' && node.callee.name === 'require' && node.arguments.length) {
-                if (node.arguments[0].type === 'Literal') {
-                  const source = node.arguments[0].value;
-                  
-                  dependencies.push({
-                    source: filePath,
-                    target: resolveImportPath(filePath, source),
-                    type: 'imports',
-                    sourceType: 'file',
-                    targetType: 'file'
-                  });
-                }
-              }
-              // Track function calls
-              else if (node.callee.type === 'Identifier') {
-                const functionName = node.callee.name;
-                
-                // Add a dependency from the current file to the function
-                dependencies.push({
-                  source: filePath,
-                  target: `${filePath}:${functionName}`,
-                  type: 'calls',
-                  sourceType: 'file',
-                  targetType: 'function'
-                });
-              }
-            },
-            
-            FunctionDeclaration(node) {
-              if (node.id) {
-                const functionName = node.id.name;
-                
-                // Add function to dependencies
-                dependencies.push({
-                  source: `${filePath}:${functionName}`,
-                  target: filePath,
-                  type: 'declares',
-                  sourceType: 'function',
-                  targetType: 'file'
-                });
-                
-                // Analyze function parameters
-                node.params.forEach(param => {
-                  if (param.type === 'Identifier') {
-                    dependencies.push({
-                      source: `${filePath}:${functionName}`,
-                      target: `${filePath}:${param.name}`,
-                      type: 'uses',
-                      sourceType: 'function',
-                      targetType: 'variable'
-                    });
-                  }
-                });
-              }
-            },
-            
-            ClassDeclaration(node) {
-              if (node.id) {
-                const className = node.id.name;
-                
-                // Add class to dependencies
-                dependencies.push({
-                  source: `${filePath}:${className}`,
-                  target: filePath,
-                  type: 'declares',
-                  sourceType: 'class',
-                  targetType: 'file'
-                });
-                
-                // Check for class extension
-                if (node.superClass) {
-                  if (node.superClass.type === 'Identifier') {
-                    dependencies.push({
-                      source: `${filePath}:${className}`,
-                      target: `${filePath}:${node.superClass.name}`,
-                      type: 'extends',
-                      sourceType: 'class',
-                      targetType: 'class'
-                    });
-                  }
-                }
-              }
-            },
-            
-            VariableDeclarator(node) {
-              if (node.id.type === 'Identifier') {
-                const varName = node.id.name;
-                
-                // Add variable to dependencies
-                dependencies.push({
-                  source: `${filePath}:${varName}`,
-                  target: filePath,
-                  type: 'declares',
-                  sourceType: 'variable',
-                  targetType: 'file'
-                });
-              }
-            }
-          });
-          
-        } catch (e) {
-          // Fallback to simpler analysis if parsing fails
-          analyzeGenericCode(filePath, content);
-        }
-      }
-      
-      // Simple HTML analysis
-      function analyzeHTML(filePath, content) {
-        // Extract script and link tags
-        const scriptRegex = /<script\s+(?:[^>]*?src\s*=\s*['"]([^'"]+)['"])?[^>]*>/g;
-        const linkRegex = /<link\s+(?:[^>]*?href\s*=\s*['"]([^'"]+)['"])(?:[^>]*?rel\s*=\s*['"]stylesheet['"])?[^>]*>/g;
-        
-        let match;
-        
-        // Find scripts
-        while ((match = scriptRegex.exec(content)) !== null) {
-          if (match[1]) {
-            dependencies.push({
-              source: filePath,
-              target: resolveImportPath(filePath, match[1]),
-              type: 'imports',
-              sourceType: 'file',
-              targetType: 'file'
-            });
-          }
-        }
-        
-        // Find stylesheets
-        while ((match = linkRegex.exec(content)) !== null) {
-          if (match[1] && content.includes('stylesheet')) {
-            dependencies.push({
-              source: filePath,
-              target: resolveImportPath(filePath, match[1]),
-              type: 'imports',
-              sourceType: 'file',
-              targetType: 'file'
-            });
-          }
-        }
-        
-        // Extract IDs and classes for potential JavaScript references
-        const idRegex = /id\s*=\s*['"]([^'"]+)['"]/g;
-        while ((match = idRegex.exec(content)) !== null) {
-          dependencies.push({
-            source: `${filePath}:#${match[1]}`,
-            target: filePath,
-            type: 'declares',
-            sourceType: 'element',
-            targetType: 'file'
-          });
-        }
-      }
-      
-      // Simple CSS analysis
-      function analyzeCSS(filePath, content) {
-        // Extract CSS imports
-        const importRegex = /@import\s+(?:url\(['"]?([^'")]+)['"]?\)|['"]([^'"]+)['"])/g;
-        
-        let match;
-        while ((match = importRegex.exec(content)) !== null) {
-          const importPath = match[1] || match[2];
-          dependencies.push({
-            source: filePath,
-            target: resolveImportPath(filePath, importPath),
-            type: 'imports',
-            sourceType: 'file',
-            targetType: 'file'
-          });
-        }
-        
-        // Extract selectors (classes and IDs)
-        const selectorRegex = /(?:\.|#)([a-zA-Z0-9_-]+)/g;
-        const uniqueSelectors = new Set();
-        
-        while ((match = selectorRegex.exec(content)) !== null) {
-          const selector = match[0].startsWith('.') ? `.${match[1]}` : `#${match[1]}`;
-          
-          if (!uniqueSelectors.has(selector)) {
-            uniqueSelectors.add(selector);
-            
-            dependencies.push({
-              source: `${filePath}:${selector}`,
-              target: filePath,
-              type: 'declares',
-              sourceType: 'selector',
-              targetType: 'file'
-            });
-          }
-        }
-      }
-      
-      // Generic code analysis for other languages
-      function analyzeGenericCode(filePath, content) {
-        // Function pattern for various languages
-        const functionRegex = /\b(?:function|def|func|fn|method|sub)\s+([a-zA-Z0-9_]+)\s*\(/g;
-        // Class pattern for various languages
-        const classRegex = /\b(?:class|interface|struct|type)\s+([a-zA-Z0-9_]+)(?:\s+(?:extends|implements|inherits)?\s+([a-zA-Z0-9_]+))?/g;
-        // Import pattern for various languages
-        const importRegex = /\b(?:import|include|require|using|include_once|require_once|load)\s+(?:['"<]([^'">\s]+)['">\s]|([a-zA-Z0-9_.\/]+))/g;
-        // Variable declarations
-        const varRegex = /\b(?:var|let|const|dim|private|public|protected|static)?\s+([a-zA-Z0-9_]+)\s*(?:=|:)\s*[^;,]+[;,]/g;
-        
-        let match;
-        
-        // Find functions
-        while ((match = functionRegex.exec(content)) !== null) {
-          const functionName = match[1];
-          
-          dependencies.push({
-            source: `${filePath}:${functionName}`,
-            target: filePath,
-            type: 'declares',
-            sourceType: 'function',
-            targetType: 'file'
-          });
-        }
-        
-        // Find classes and inheritance
-        while ((match = classRegex.exec(content)) !== null) {
-          const className = match[1];
-          const extendedClass = match[2];
-          
-          dependencies.push({
-            source: `${filePath}:${className}`,
-            target: filePath,
-            type: 'declares',
-            sourceType: 'class',
-            targetType: 'file'
-          });
-          
-          if (extendedClass) {
-            dependencies.push({
-              source: `${filePath}:${className}`,
-              target: `${filePath}:${extendedClass}`,
-              type: 'extends',
-              sourceType: 'class',
-              targetType: 'class'
-            });
-          }
-        }
-        
-        // Find imports
-        while ((match = importRegex.exec(content)) !== null) {
-          const importPath = match[1] || match[2];
-          
-          if (importPath) {
-            dependencies.push({
-              source: filePath,
-              target: resolveImportPath(filePath, importPath),
-              type: 'imports',
-              sourceType: 'file',
-              targetType: 'file'
-            });
-          }
-        }
-        
-        // Find variable declarations
-        while ((match = varRegex.exec(content)) !== null) {
-          const varName = match[1];
-          
-          dependencies.push({
-            source: `${filePath}:${varName}`,
-            target: filePath,
-            type: 'declares',
-            sourceType: 'variable',
-            targetType: 'file'
-          });
-        }
-      }
-      
-      // Resolve relative import paths
-      function resolveImportPath(currentPath, importPath) {
-        // Handle absolute paths or URLs
-        if (importPath.startsWith('/') || importPath.includes('://')) {
-          return importPath;
-        }
-        
-        // Split the current path into directories
-        const parts = currentPath.split('/');
-        parts.pop(); // Remove the file name
-        
-        // Handle relative paths
-        if (importPath.startsWith('./')) {
-          importPath = importPath.substring(2);
-        } else if (importPath.startsWith('../')) {
-          while (importPath.startsWith('../')) {
-            importPath = importPath.substring(3);
-            parts.pop();
-          }
-        }
-        
-        // Combine the path
-        return parts.length > 0 ? `${parts.join('/')}/${importPath}` : importPath;
-      }
-      
-      // Build network graph
-      function buildNetworkGraph() {
-        // Clear existing nodes and edges
-        nodes.clear();
-        edges.clear();
-        
-        const nodeMap = new Map();
-        const edgeMap = new Map();
-        
-        // First pass: Create file nodes
-        files.forEach(file => {
-          const filePath = file.webkitRelativePath || file.name;
-          const fileName = filePath.split('/').pop();
-          
-          // Create node for the file
-          const fileNode = {
-            id: filePath,
-            label: fileName,
-            title: filePath,
-            path: filePath,
-            type: 'file',
-            content: fileContents[filePath] || null,
-            color: {
-              background: fileNodeColor.value,
-              border: '#2563EB',
-              highlight: {
-                background: '#D1E9FF',
-                border: '#2563EB'
-              }
-            },
-            font: {
-              color: '#1F2937'
-            }
-          };
-          
-          nodeMap.set(filePath, fileNode);
-        });
-        
-        // Second pass: Create entity nodes (functions, classes, variables)
-        dependencies.forEach(dep => {
-          // Function, class, or variable nodes
-          if (dep.sourceType !== 'file' && !nodeMap.has(dep.source)) {
-            const parts = dep.source.split(':');
-            const filePath = parts[0];
-            const entityName = parts[1];
-            const entityType = dep.sourceType;
-            
-            let nodeColor;
-            switch (entityType) {
-              case 'function':
-                nodeColor = functionNodeColor.value;
-                break;
-              case 'class':
-                nodeColor = classNodeColor.value;
-                break;
-              case 'variable':
-                nodeColor = variableNodeColor.value;
-                break;
-              default:
-                nodeColor = '#A1A1AA';
-            }
-            
-            const entityNode = {
-              id: dep.source,
-              label: entityName,
-              title: `${entityType}: ${entityName}\nFile: ${filePath}`,
-              type: entityType,
-              filePath: filePath,
-              color: {
-                background: nodeColor,
-                border: '#6D28D9',
-                highlight: {
-                  background: '#EDE9FE',
-                  border: '#6D28D9'
-                }
-              },
-              font: {
-                color: '#1F2937'
-              },
-              size: 10 // Smaller than file nodes
-            };
-            
-            nodeMap.set(dep.source, entityNode);
-          }
-          
-          // Target entity nodes
-          if (dep.targetType !== 'file' && !nodeMap.has(dep.target)) {
-            const parts = dep.target.split(':');
-            const filePath = parts[0];
-            const entityName = parts[1];
-            const entityType = dep.targetType;
-            
-            let nodeColor;
-            switch (entityType) {
-              case 'function':
-                nodeColor = functionNodeColor.value;
-                break;
-              case 'class':
-                nodeColor = classNodeColor.value;
-                break;
-              case 'variable':
-                nodeColor = variableNodeColor.value;
-                break;
-              default:
-                nodeColor = '#A1A1AA';
-            }
-            
-            const entityNode = {
-              id: dep.target,
-              label: entityName,
-              title: `${entityType}: ${entityName}\nFile: ${filePath}`,
-              type: entityType,
-              filePath: filePath,
-              color: {
-                background: nodeColor,
-                border: '#6D28D9',
-                highlight: {
-                  background: '#EDE9FE',
-                  border: '#6D28D9'
-                }
-              },
-              font: {
-                color: '#1F2937'
-              },
-              size: 10
-            };
-            
-            nodeMap.set(dep.target, entityNode);
-          }
-        });
-        
-        // Third pass: Create edges between nodes
-        dependencies.forEach(dep => {
-          const sourceNode = nodeMap.get(dep.source);
-          const targetNode = nodeMap.get(dep.target);
-          
-          if (sourceNode && targetNode) {
-            const edgeId = `${dep.source}-${dep.target}-${dep.type}`;
-            
-            // Avoid duplicate edges
-            if (!edgeMap.has(edgeId)) {
-              let edgeColor;
-              switch (dep.type) {
-                case 'imports':
-                  edgeColor = importsEdgeColor.value;
-                  break;
-                case 'calls':
-                  edgeColor = callsEdgeColor.value;
-                  break;
-                case 'extends':
-                  edgeColor = extendsEdgeColor.value;
-                  break;
-                default:
-                  edgeColor = '#A1A1AA';
-              }
-              
-              const edge = {
-                id: edgeId,
-                from: dep.source,
-                to: dep.target,
-                title: `${dep.type}: ${sourceNode.label} → ${targetNode.label}`,
-                type: dep.type,
-                arrows: 'to',
-                color: {
-                  color: edgeColor,
-                  highlight: '#000000'
-                },
-                width: 1
-              };
-              
-              edgeMap.set(edgeId, edge);
-            }
-          }
-        });
-        
-        // Add nodes and edges to the network
-        nodes.add(Array.from(nodeMap.values()));
-        edges.add(Array.from(edgeMap.values()));
-        
-        // Apply initial layout
-        updateGraphLayout(layoutSelect.value);
-      }
-      
-      // Update graph layout
-      function updateGraphLayout(layout) {
-        if (!network) return;
-        
-        switch (layout) {
-          case 'hierarchical':
-            network.setOptions({
-              layout: {
-                hierarchical: {
-                  direction: 'LR',
-                  sortMethod: 'directed',
-                  nodeSpacing: 150,
-                  levelSeparation: 150
-                }
-              },
-              physics: {
-                enabled: false
-              }
-            });
-            break;
-            
-          case 'force':
-            network.setOptions({
-              layout: {
-                hierarchical: false
-              },
-              physics: {
-                enabled: true,
-                solver: 'forceAtlas2Based',
-                forceAtlas2Based: {
-                  gravitationalConstant: -50,
-                  centralGravity: 0.01,
-                  springLength: 100,
-                  springConstant: 0.08
-                },
-                stabilization: {
-                  iterations: 200
-                }
-              }
-            });
-            break;
-            
-          case 'radial':
-            network.setOptions({
-              layout: {
-                hierarchical: false
-              },
-              physics: {
-                enabled: true,
-                solver: 'repulsion',
-                repulsion: {
-                  nodeDistance: 200,
-                  centralGravity: 0.2,
-                  springLength: 200,
-                  springConstant: 0.05,
-                  damping: 0.09
-                },
-                stabilization: {
-                  iterations: 200
-                }
-              }
-            });
-            break;
-        }
-        
-        // Stabilize and fit the network
-        network.stabilize(100);
-        setTimeout(() => {
-          network.fit({
-            animation: {
-              duration: 1000,
-              easingFunction: 'easeInOutQuad'
-            }
-          });
-        }, 500);
-      }
-      
-      // Update graph colors
-      function updateGraphColors() {
-        const nodeUpdates = [];
-        const edgeUpdates = [];
-        
-        // Update node colors
-        const allNodes = nodes.get();
-        allNodes.forEach(node => {
-          let nodeColor;
-          
-          switch (node.type) {
-            case 'file':
-              nodeColor = fileNodeColor.value;
-              break;
-            case 'function':
-              nodeColor = functionNodeColor.value;
-              break;
-            case 'class':
-              nodeColor = classNodeColor.value;
-              break;
-            case 'variable':
-              nodeColor = variableNodeColor.value;
-              break;
-            default:
-              nodeColor = '#A1A1AA';
-          }
-          
-          nodeUpdates.push({
-            id: node.id,
-            color: {
-              ...node.color,
-              background: nodeColor
-            }
-          });
-        });
-        
-        // Update edge colors
-        const allEdges = edges.get();
-        allEdges.forEach(edge => {
-          let edgeColor;
-          
-          switch (edge.type) {
-            case 'imports':
-              edgeColor = importsEdgeColor.value;
-              break;
-            case 'calls':
-              edgeColor = callsEdgeColor.value;
-              break;
-            case 'extends':
-              edgeColor = extendsEdgeColor.value;
-              break;
-            default:
-              edgeColor = '#A1A1AA';
-          }
-          
-          edgeUpdates.push({
-            id: edge.id,
-            color: {
-              color: edgeColor,
-              highlight: '#000000'
-            }
-          });
-        });
-        
-        // Update the legend
-        updateLegend();
-        
-        // Apply updates
-        nodes.update(nodeUpdates);
-        edges.update(edgeUpdates);
-      }
-      
-      // Update the legend with current colors
-      function updateLegend() {
-        const legend = document.getElementById('graph-legend');
-        const legendItems = legend.querySelectorAll('.legend-item');
-        
-        legendItems.forEach(item => {
-          const colorDiv = item.querySelector('.legend-color');
-          const text = item.querySelector('span').textContent.toLowerCase();
-          
-          if (text === 'files') {
-            colorDiv.style.backgroundColor = fileNodeColor.value;
-          } else if (text === 'functions') {
-            colorDiv.style.backgroundColor = functionNodeColor.value;
-          } else if (text === 'variables') {
-            colorDiv.style.backgroundColor = variableNodeColor.value;
-          } else if (text === 'classes') {
-            colorDiv.style.backgroundColor = classNodeColor.value;
-          } else if (text.includes('calls')) {
-            colorDiv.style.backgroundColor = callsEdgeColor.value;
-          } else if (text.includes('import')) {
-            colorDiv.style.backgroundColor = importsEdgeColor.value;
-          } else if (text.includes('extends')) {
-            colorDiv.style.backgroundColor = extendsEdgeColor.value;
-          }
-        });
-      }
-      
-      // Focus on node dependencies
-      function focusOnNodeDependencies(nodeId) {
-        if (!network) return;
-        
-        const connectedNodes = new Set();
-        connectedNodes.add(nodeId);
-        
-        // Find connected edges
-        const allEdges = edges.get();
-        allEdges.forEach(edge => {
-          if (edge.from === nodeId || edge.to === nodeId) {
-            connectedNodes.add(edge.from);
-            connectedNodes.add(edge.to);
-          }
-        });
-        
-        // Select connected nodes
-        network.selectNodes(Array.from(connectedNodes));
-        
-        // Focus on the selection
-        network.fit({
-          nodes: Array.from(connectedNodes),
-          animation: {
-            duration: 1000,
-            easingFunction: 'easeInOutQuad'
-          }
-        });
-      }
-      
-      // Export dependencies as CSV
-      function exportDependenciesCSV() {
-        if (dependencies.length === 0) {
-          showToast('Error', 'No dependencies to export', 'error');
-          return;
-        }
-        
-        // Prepare CSV data
-        const csvData = [
-          ['Source', 'Target', 'Relationship Type', 'Source Type', 'Target Type']
-        ];
-        
-        dependencies.forEach(dep => {
-          csvData.push([
-            dep.source,
-            dep.target,
-            dep.type,
-            dep.sourceType,
-            dep.targetType
-          ]);
-        });
-        
-        // Generate CSV content
-        const csv = Papa.unparse(csvData);
-        
-        // Create download link
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'codebase_dependencies.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Show success message
-        showToast('Success', 'Dependencies exported to CSV', 'success');
-      }
-      
-      // Open code viewer modal
-      function openCodeViewer(filename, content) {
-        codeModalTitle.textContent = filename;
-        codeViewer.textContent = content;
-        codeModal.style.display = 'flex';
-      }
-      
-      // Hide context menu
-      function hideContextMenu() {
-        contextMenu.style.display = 'none';
-      }
-      
-      // Show progress overlay
-      function showProgressOverlay() {
-        progressOverlay.style.display = 'flex';
-        progressBar.style.width = '0%';
-        progressText.innerText = 'Processing files...';
-      }
-      
-      // Hide progress overlay
-      function hideProgressOverlay() {
-        progressOverlay.style.display = 'none';
-      }
-      
-      // Show toast notification
-      function showToast(title, message, type = 'info') {
-        const toastContainer = document.getElementById('toast-container');
-        
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        
-        // Add border color based on type
-        switch (type) {
-          case 'success':
-            toast.style.borderLeftColor = '#10B981';
-            break;
-          case 'error':
-            toast.style.borderLeftColor = '#EF4444';
-            break;
-          case 'warning':
-            toast.style.borderLeftColor = '#F59E0B';
-            break;
-          case 'info':
-          default:
-            toast.style.borderLeftColor = '#3B82F6';
-            break;
-        }
-        
-        // Add toast header
-        const toastHeader = document.createElement('div');
-        toastHeader.className = 'toast-header';
-        
-        // Toast title with icon
-        const toastTitle = document.createElement('div');
-        toastTitle.className = 'toast-title';
-        
-        // Add appropriate icon based on type
-        let iconClass;
-        switch (type) {
-          case 'success':
-            iconClass = 'bi-check-circle-fill text-success';
-            break;
-          case 'error':
-            iconClass = 'bi-exclamation-circle-fill text-danger';
-            break;
-          case 'warning':
-            iconClass = 'bi-exclamation-triangle-fill text-warning';
-            break;
-          case 'info':
-          default:
-            iconClass = 'bi-info-circle-fill text-primary';
-            break;
-        }
-        
-        toastTitle.innerHTML = `<i class="bi ${iconClass} me-2"></i>${title}`;
-        toastHeader.appendChild(toastTitle);
-        
-        // Close button
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'toast-close';
-        closeBtn.innerHTML = '<i class="bi bi-x"></i>';
-        closeBtn.addEventListener('click', function() {
-          toast.remove();
-        });
-        toastHeader.appendChild(closeBtn);
-        
-        toast.appendChild(toastHeader);
-        
-        // Add toast message
-        const toastBody = document.createElement('div');
-        toastBody.className = 'toast-body';
-        toastBody.textContent = message;
-        toast.appendChild(toastBody);
-        
-        // Add to container
-        toastContainer.appendChild(toast);
-        
-        // Auto dismiss after 5 seconds
-        setTimeout(() => {
-          toast.style.opacity = '0';
-          toast.style.transition = 'opacity 0.5s';
-          
-          setTimeout(() => {
-            toast.remove();
-          }, 500);
-        }, 5000);
-      }
-      
-      // Initialize network and event listeners
-      initializeGraph();
-      initializeEventListeners();
-      
-      // Show welcome toast
-      setTimeout(() => {
-        showToast('Welcome', 'Select a folder to visualize your codebase', 'info');
-      }, 1000);
-    });
-  </script>
+    </script>
 </body>
 </html>
