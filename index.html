@@ -4,377 +4,241 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard App</title>
-  <!-- Bootstrap CSS for styling -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Codebase Visualizer</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <!-- Custom CSS -->
+  <!-- Vis.js for network visualization -->
+  <link href="https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/dist/vis-network.min.css" rel="stylesheet">
+  <!-- JSZip for handling large files -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Papa Parse for CSV export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  
   <style>
     :root {
-      --primary: #8B5CF6;
-      --primary-hover: #7C3AED;
+      --primary: #6366F1;
+      --secondary: #8B5CF6;
+      --success: #10B981;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --info: #3B82F6;
       --background: #FFFFFF;
-      --foreground: #333333;
+      --foreground: #1F2937;
       --muted: #F3F4F6;
-      --muted-foreground: #71717A;
+      --muted-foreground: #6B7280;
       --border: #E5E7EB;
-      --sidebar-bg: #F9FAFB;
-      --sidebar-width: 250px;
-      --sidebar-collapsed-width: 70px;
-      --content-padding: 1.5rem;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--background);
+      color: var(--foreground);
       margin: 0;
       padding: 0;
-      color: var(--foreground);
-      overflow-x: hidden;
+      height: 100vh;
+      overflow: hidden;
     }
 
     .app-container {
       display: flex;
-      min-height: 100vh;
+      flex-direction: column;
+      height: 100vh;
     }
 
-    /* Sidebar styles */
-    .sidebar {
-      width: var(--sidebar-width);
-      background-color: var(--sidebar-bg);
-      border-right: 1px solid var(--border);
-      transition: width 0.3s ease;
-      overflow-x: hidden;
-      z-index: 100;
-    }
-
-    .sidebar.collapsed {
-      width: var(--sidebar-collapsed-width);
-    }
-
-    .sidebar-header {
+    .header {
+      background-color: var(--primary);
+      color: white;
       padding: 1rem;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary);
-      white-space: nowrap;
-    }
-
-    .sidebar-toggle {
-      cursor: pointer;
-      color: var(--muted-foreground);
-      background: none;
-      border: none;
-      padding: 5px;
-    }
-
-    .sidebar-menu {
-      padding: 1rem 0;
-    }
-
-    .menu-item {
-      display: flex;
       align-items: center;
-      padding: 0.75rem 1rem;
-      color: var(--foreground);
-      text-decoration: none;
-      transition: background-color 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .menu-item:hover {
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .file-explorer {
+      width: 30%;
+      border-right: 1px solid var(--border);
+      overflow: auto;
+      padding: 1rem;
       background-color: var(--muted);
     }
 
-    .menu-item.active {
-      background-color: rgba(139, 92, 246, 0.1);
-      color: var(--primary);
+    .graph-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: var(--background);
+    }
+
+    #network-graph {
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .file-tree {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .file-tree ul {
+      list-style-type: none;
+      padding-left: 1.5rem;
+    }
+
+    .file-tree-item {
+      padding: 0.25rem 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .file-tree-item:hover {
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+
+    .file-tree-item.selected {
+      background-color: rgba(99, 102, 241, 0.2);
       font-weight: 500;
     }
 
-    .menu-item i {
-      margin-right: 0.75rem;
-      font-size: 1.25rem;
-      min-width: 1.25rem;
+    .file-icon {
+      margin-right: 0.5rem;
+      width: 1.5rem;
       text-align: center;
     }
 
-    .menu-text {
-      white-space: nowrap;
+    .folder-icon {
+      color: var(--warning);
     }
 
-    .sidebar.collapsed .menu-text,
-    .sidebar.collapsed .logo-text {
-      display: none;
+    .file-icon-default {
+      color: var(--info);
     }
 
-    /* Main content styles */
-    .main-content {
-      flex: 1;
-      padding: var(--content-padding);
-      transition: margin-left 0.3s ease;
-      width: calc(100% - var(--sidebar-width));
+    .expandable {
+      margin-right: 0.25rem;
+      width: 1rem;
+      text-align: center;
+      transition: transform 0.2s;
     }
 
-    .sidebar.collapsed ~ .main-content {
-      width: calc(100% - var(--sidebar-collapsed-width));
+    .collapsed .expandable {
+      transform: rotate(-90deg);
     }
-
-    /* Card styles */
-    .card {
-      background: var(--background);
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      margin-bottom: 1.5rem;
-    }
-
-    .card-header {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .card-body {
-      padding: 1rem;
-    }
-
-    .card-footer {
-      padding: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    /* Button styles */
-    .btn-primary {
+    
+    .button-primary {
       background-color: var(--primary);
-      border-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
     }
-
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-      border-color: var(--primary-hover);
+    
+    .button-primary:hover {
+      background-color: #5254cc;
     }
-
-    .btn-outline {
+    
+    .button-outline {
       background-color: transparent;
-      border: 1px solid var(--border);
-      color: var(--foreground);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-
-    .btn-outline:hover {
-      background-color: var(--muted);
+    
+    .button-outline:hover {
+      background-color: rgba(99, 102, 241, 0.1);
     }
-
-    /* Grid layout */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 1.5rem;
-    }
-
-    .col-span-4 {
-      grid-column: span 4;
-    }
-
-    .col-span-6 {
-      grid-column: span 6;
-    }
-
-    .col-span-8 {
-      grid-column: span 8;
-    }
-
-    .col-span-12 {
-      grid-column: span 12;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 992px) {
-      .col-span-4, .col-span-6, .col-span-8 {
-        grid-column: span 12;
-      }
-      
-      .sidebar {
-        position: fixed;
-        height: 100%;
-        transform: translateX(-100%);
-      }
-      
-      .sidebar.open {
-        transform: translateX(0);
-      }
-      
-      .main-content {
-        width: 100%;
-      }
-      
-      .mobile-sidebar-toggle {
-        display: block;
-      }
-    }
-
-    @media (min-width: 993px) {
-      .mobile-sidebar-toggle {
-        display: none;
-      }
-      
-      .sidebar {
-        transform: translateX(0);
-      }
-    }
-
-    /* Data visualization styles */
-    .progress-container {
-      margin-bottom: 1rem;
-    }
-
-    .progress-label {
+    
+    .progress-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.8);
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
-
-    .progress {
-      height: 0.75rem;
+    
+    .progress-bar-container {
+      width: 50%;
+      height: 20px;
       background-color: var(--muted);
-      border-radius: 1rem;
-    }
-
-    .progress-bar {
-      background-color: var(--primary);
-      border-radius: 1rem;
-    }
-
-    /* Form styles */
-    .form-group {
+      border-radius: 10px;
+      overflow: hidden;
       margin-bottom: 1rem;
     }
-
-    .form-label {
+    
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary);
+      border-radius: 10px;
+      transition: width 0.3s;
+    }
+    
+    .control-group {
+      margin-bottom: 1rem;
+    }
+    
+    .control-group label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
     }
-
-    .form-control {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: 0.25rem;
-      background-color: var(--background);
-    }
-
-    .form-control:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
-    }
-
-    /* Chart placeholder */
-    .chart-placeholder {
-      width: 100%;
-      height: 250px;
-      background-color: var(--muted);
-      border-radius: 0.5rem;
+    
+    .color-picker-group {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted-foreground);
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
     }
-
-    /* Table styles */
-    .table {
-      width: 100%;
-      border-collapse: collapse;
+    
+    .color-picker-label {
+      min-width: 100px;
     }
-
-    .table th {
-      text-align: left;
-      padding: 0.75rem;
-      border-bottom: 2px solid var(--border);
-      font-weight: 600;
-    }
-
-    .table td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .table tr:last-child td {
-      border-bottom: none;
-    }
-
-    /* Status badge */
-    .badge {
+    
+    /* Style for the file input */
+    .file-input-container {
+      position: relative;
+      overflow: hidden;
       display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 500;
     }
-
-    .badge-success {
-      background-color: rgba(34, 197, 94, 0.1);
-      color: rgb(34, 197, 94);
-    }
-
-    .badge-warning {
-      background-color: rgba(245, 158, 11, 0.1);
-      color: rgb(245, 158, 11);
-    }
-
-    .badge-danger {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: rgb(239, 68, 68);
-    }
-
-    /* Calendar styles */
-    .calendar {
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-    }
-
-    .calendar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      padding: 0.5rem;
-    }
-
-    .calendar-day {
-      text-align: center;
-      padding: 0.5rem;
+    
+    .file-input {
+      position: absolute;
+      font-size: 100px;
+      right: 0;
+      top: 0;
+      opacity: 0;
       cursor: pointer;
     }
-
-    .calendar-day:hover {
-      background-color: var(--muted);
-      border-radius: 0.25rem;
-    }
-
-    .calendar-day.today {
-      background-color: var(--primary);
-      color: white;
-      border-radius: 0.25rem;
-    }
-
+    
     /* Toast notification */
     .toast-container {
       position: fixed;
@@ -382,586 +246,1771 @@
       right: 1rem;
       z-index: 1000;
     }
-
+    
     .toast {
       background-color: var(--background);
       border: 1px solid var(--border);
-      border-radius: 0.5rem;
+      border-left: 4px solid var(--primary);
+      border-radius: 0.25rem;
       padding: 1rem;
       margin-bottom: 0.5rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       max-width: 350px;
     }
-
+    
     .toast-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 0.5rem;
     }
-
+    
     .toast-title {
       font-weight: 600;
     }
-
+    
     .toast-close {
       background: none;
       border: none;
       cursor: pointer;
       color: var(--muted-foreground);
     }
+    
+    /* Loading spinner */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(99, 102, 241, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+    
+    .legend-color {
+      width: 20px;
+      height: 10px;
+      margin-right: 0.5rem;
+      border-radius: 2px;
+    }
+    
+    /* For performance warning */
+    .performance-warning {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--warning);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 1000;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal {
+      background-color: var(--background);
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      width: 80%;
+      max-width: 600px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: var(--muted-foreground);
+    }
+    
+    .modal-content {
+      padding: 1rem;
+      flex: 1;
+      overflow: auto;
+    }
+    
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* Code viewer */
+    .code-viewer {
+      font-family: 'Courier New', monospace;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      overflow: auto;
+      max-height: 50vh;
+      white-space: pre;
+    }
+
+    /* Custom context menu */
+    .context-menu {
+      position: absolute;
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      padding: 0.5rem 0;
+      z-index: 1000;
+    }
+    
+    .context-menu-item {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    
+    .context-menu-item:hover {
+      background-color: var(--muted);
+    }
   </style>
-  <!-- Required Script for GPT Engineer -->
-  <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <i class="bi bi-grid-1x2-fill"></i>
-          <span class="logo-text">Dashboard</span>
+    <header class="header">
+      <h1>Codebase Visualizer</h1>
+      <div class="d-flex align-items-center gap-2">
+        <div class="file-input-container">
+          <button class="button-primary" id="select-folder-btn">
+            <i class="bi bi-folder2-open me-2"></i>Browse Folder
+          </button>
+          <input type="file" id="folder-input" webkitdirectory directory multiple class="file-input">
         </div>
-        <button class="sidebar-toggle" id="sidebarToggle">
-          <i class="bi bi-chevron-left"></i>
+        <button class="button-outline" id="export-csv-btn">
+          <i class="bi bi-file-earmark-arrow-down me-2"></i>Export CSV
         </button>
       </div>
-      <nav class="sidebar-menu">
-        <a href="#" class="menu-item active">
-          <i class="bi bi-house-door"></i>
-          <span class="menu-text">Dashboard</span>
-        </a>
-        <a href="#" class="menu-item">
-          <i class="bi bi-bar-chart"></i>
-          <span class="menu-text">Analytics</span>
-        </a>
-        <a href="#" class="menu-item">
-          <i class="bi bi-people"></i>
-          <span class="menu-text">Users</span>
-        </a>
-        <a href="#" class="menu-item">
-          <i class="bi bi-calendar"></i>
-          <span class="menu-text">Calendar</span>
-        </a>
-        <a href="#" class="menu-item">
-          <i class="bi bi-gear"></i>
-          <span class="menu-text">Settings</span>
-        </a>
-      </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <button class="btn btn-outline mobile-sidebar-toggle" id="mobileSidebarToggle">
-        <i class="bi bi-list"></i>
-      </button>
-      
-      <div class="mb-4">
-        <h1>Dashboard</h1>
-        <p class="text-muted">Welcome back! Here's an overview of your account.</p>
-      </div>
-      
-      <!-- Stats Cards -->
-      <div class="grid">
-        <div class="col-span-4">
-          <div class="card">
-            <div class="card-body text-center">
-              <i class="bi bi-person text-primary" style="font-size: 2rem;"></i>
-              <h3 class="mt-2">2,457</h3>
-              <p class="text-muted">Total Users</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-span-4">
-          <div class="card">
-            <div class="card-body text-center">
-              <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
-              <h3 class="mt-2">$24,568</h3>
-              <p class="text-muted">Total Revenue</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-span-4">
-          <div class="card">
-            <div class="card-body text-center">
-              <i class="bi bi-bag text-warning" style="font-size: 2rem;"></i>
-              <h3 class="mt-2">178</h3>
-              <p class="text-muted">New Orders</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Chart and Progress -->
-      <div class="grid mt-4">
-        <div class="col-span-8">
-          <div class="card">
-            <div class="card-header">
-              Revenue Overview
-              <div>
-                <select class="form-select" id="chartPeriod">
-                  <option>This Week</option>
-                  <option>This Month</option>
-                  <option>This Year</option>
-                </select>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="chart-placeholder" id="revenueChart">
-                <span>Chart will be rendered here with CDN library</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-span-4">
-          <div class="card">
-            <div class="card-header">
-              Progress Overview
-            </div>
-            <div class="card-body">
-              <div class="progress-container">
-                <div class="progress-label">
-                  <span>Total Sales</span>
-                  <span>78%</span>
-                </div>
-                <div class="progress">
-                  <div class="progress-bar" style="width: 78%"></div>
-                </div>
-              </div>
-              
-              <div class="progress-container">
-                <div class="progress-label">
-                  <span>New Users</span>
-                  <span>63%</span>
-                </div>
-                <div class="progress">
-                  <div class="progress-bar" style="width: 63%"></div>
-                </div>
-              </div>
-              
-              <div class="progress-container">
-                <div class="progress-label">
-                  <span>Conversion Rate</span>
-                  <span>42%</span>
-                </div>
-                <div class="progress">
-                  <div class="progress-bar" style="width: 42%"></div>
-                </div>
-              </div>
-              
-              <div class="progress-container">
-                <div class="progress-label">
-                  <span>Retention</span>
-                  <span>85%</span>
-                </div>
-                <div class="progress">
-                  <div class="progress-bar" style="width: 85%"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Recent Orders Table -->
-      <div class="grid mt-4">
-        <div class="col-span-12">
-          <div class="card">
-            <div class="card-header">
-              Recent Orders
-              <button class="btn btn-outline btn-sm">View All</button>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>#ORD-001</td>
-                      <td>John Smith</td>
-                      <td>June 12, 2023</td>
-                      <td>$236.50</td>
-                      <td><span class="badge badge-success">Completed</span></td>
-                    </tr>
-                    <tr>
-                      <td>#ORD-002</td>
-                      <td>Sarah Johnson</td>
-                      <td>June 13, 2023</td>
-                      <td>$125.99</td>
-                      <td><span class="badge badge-warning">Processing</span></td>
-                    </tr>
-                    <tr>
-                      <td>#ORD-003</td>
-                      <td>Michael Brown</td>
-                      <td>June 14, 2023</td>
-                      <td>$458.75</td>
-                      <td><span class="badge badge-success">Completed</span></td>
-                    </tr>
-                    <tr>
-                      <td>#ORD-004</td>
-                      <td>Emily Davis</td>
-                      <td>June 14, 2023</td>
-                      <td>$78.25</td>
-                      <td><span class="badge badge-danger">Cancelled</span></td>
-                    </tr>
-                    <tr>
-                      <td>#ORD-005</td>
-                      <td>Robert Wilson</td>
-                      <td>June 15, 2023</td>
-                      <td>$325.00</td>
-                      <td><span class="badge badge-warning">Processing</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Form & Calendar -->
-      <div class="grid mt-4">
-        <div class="col-span-6">
-          <div class="card">
-            <div class="card-header">
-              Contact Form
-            </div>
-            <div class="card-body">
-              <form id="contactForm">
-                <div class="form-group">
-                  <label for="name" class="form-label">Name</label>
-                  <input type="text" id="name" class="form-control" placeholder="Enter your name">
-                </div>
-                <div class="form-group">
-                  <label for="email" class="form-label">Email</label>
-                  <input type="email" id="email" class="form-control" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                  <label for="message" class="form-label">Message</label>
-                  <textarea id="message" class="form-control" rows="4" placeholder="Enter your message"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
-              </form>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-span-6">
-          <div class="card">
-            <div class="card-header">
-              Calendar
-            </div>
-            <div class="card-body">
-              <div class="calendar">
-                <div class="calendar-header">
-                  <button class="btn btn-outline btn-sm" id="prevMonth">
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                  <h4 id="currentMonth">June 2023</h4>
-                  <button class="btn btn-outline btn-sm" id="nextMonth">
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
-                </div>
-                <div class="calendar-grid" id="calendarGrid">
-                  <!-- Calendar days will be generated via JavaScript -->
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Toast Container -->
-  <div class="toast-container" id="toastContainer">
-    <!-- Toasts will be added here dynamically -->
-  </div>
-
-  <!-- Chart.js for data visualization -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Main JavaScript -->
-  <script>
-    // Initialize the sidebar
-    document.addEventListener('DOMContentLoaded', function() {
-      const sidebar = document.getElementById('sidebar');
-      const sidebarToggle = document.getElementById('sidebarToggle');
-      const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-      
-      // Toggle sidebar on desktop
-      sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('collapsed');
-        
-        // Toggle the icon
-        const icon = sidebarToggle.querySelector('i');
-        if (sidebar.classList.contains('collapsed')) {
-          icon.classList.remove('bi-chevron-left');
-          icon.classList.add('bi-chevron-right');
-        } else {
-          icon.classList.remove('bi-chevron-right');
-          icon.classList.add('bi-chevron-left');
-        }
-      });
-      
-      // Toggle sidebar on mobile
-      mobileSidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('open');
-      });
-      
-      // Initialize the revenue chart
-      initializeChart();
-      
-      // Initialize calendar
-      initializeCalendar();
-      
-      // Handle contact form submission
-      const contactForm = document.getElementById('contactForm');
-      contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        // Get form values
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const message = document.getElementById('message').value;
-        
-        // Simple validation
-        if (name && email && message) {
-          // Show success toast
-          showToast('Form Submitted', 'Your message has been sent successfully!');
-          // Reset form
-          contactForm.reset();
-        } else {
-          // Show error toast
-          showToast('Error', 'Please fill in all fields', 'error');
-        }
-      });
-    });
+    </header>
     
-    // Initialize Revenue Chart
-    function initializeChart() {
-      const ctx = document.getElementById('revenueChart');
+    <div class="main-content">
+      <!-- File explorer on the left -->
+      <div class="file-explorer">
+        <div id="file-tree-container" class="file-tree"></div>
+      </div>
       
-      // Replace placeholder with actual Chart.js chart
-      ctx.innerHTML = '';
-      const canvas = document.createElement('canvas');
-      ctx.appendChild(canvas);
+      <!-- Network graph on the right -->
+      <div class="graph-container">
+        <div id="network-graph"></div>
+        
+        <!-- Controls for graph customization -->
+        <div class="controls" id="graph-controls">
+          <div class="control-group">
+            <label>Graph Layout</label>
+            <select id="layout-select" class="form-select form-select-sm">
+              <option value="hierarchical">Hierarchical</option>
+              <option value="force">Force Directed</option>
+              <option value="radial">Radial</option>
+            </select>
+          </div>
+          
+          <div class="control-group">
+            <label>Node Colors</label>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Files:</span>
+              <input type="color" id="file-node-color" value="#3B82F6">
+            </div>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Functions:</span>
+              <input type="color" id="function-node-color" value="#10B981">
+            </div>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Variables:</span>
+              <input type="color" id="variable-node-color" value="#F59E0B">
+            </div>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Classes:</span>
+              <input type="color" id="class-node-color" value="#8B5CF6">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <label>Edge Colors</label>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Calls:</span>
+              <input type="color" id="calls-edge-color" value="#EF4444">
+            </div>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Imports:</span>
+              <input type="color" id="imports-edge-color" value="#6366F1">
+            </div>
+            <div class="color-picker-group">
+              <span class="color-picker-label">Extends:</span>
+              <input type="color" id="extends-edge-color" value="#14B8A6">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <button id="center-graph-btn" class="button-primary">
+              <i class="bi bi-arrows-fullscreen me-2"></i>Center Graph
+            </button>
+          </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend" id="graph-legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #3B82F6;"></div>
+            <span>Files</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #10B981;"></div>
+            <span>Functions</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #F59E0B;"></div>
+            <span>Variables</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #8B5CF6;"></div>
+            <span>Classes</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #EF4444;"></div>
+            <span>Calls Relationship</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #6366F1;"></div>
+            <span>Import Relationship</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: #14B8A6;"></div>
+            <span>Extends Relationship</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Progress overlay -->
+  <div id="progress-overlay" class="progress-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <div class="progress-bar-container">
+      <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+    </div>
+    <div id="progress-text">Processing files...</div>
+  </div>
+  
+  <!-- Performance warning for large codebases -->
+  <div id="performance-warning" class="performance-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <span>Large codebase detected! Visualization may be slow.</span>
+  </div>
+  
+  <!-- Toast notification container -->
+  <div id="toast-container" class="toast-container"></div>
+  
+  <!-- Code viewer modal -->
+  <div id="code-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="code-modal-title">File Content</div>
+        <button class="modal-close" id="close-code-modal">&times;</button>
+      </div>
+      <div class="modal-content">
+        <pre id="code-viewer" class="code-viewer"></pre>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Custom context menu -->
+  <div id="context-menu" class="context-menu" style="display: none;">
+    <div class="context-menu-item" id="context-view-file">
+      <i class="bi bi-eye me-2"></i>View File
+    </div>
+    <div class="context-menu-item" id="context-focus-node">
+      <i class="bi bi-zoom-in me-2"></i>Focus on Dependencies
+    </div>
+  </div>
+  
+  <!-- Load the necessary libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/dist/vis-network.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vis-data@7.1.6/dist/vis-data.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.10.0/acorn.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn-walk/8.2.0/walk.min.js"></script>
+  
+  <script>
+    // Main JavaScript for the application
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM elements
+      const folderInput = document.getElementById('folder-input');
+      const selectFolderBtn = document.getElementById('select-folder-btn');
+      const exportCsvBtn = document.getElementById('export-csv-btn');
+      const fileTreeContainer = document.getElementById('file-tree-container');
+      const networkGraph = document.getElementById('network-graph');
+      const progressOverlay = document.getElementById('progress-overlay');
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      const performanceWarning = document.getElementById('performance-warning');
+      const layoutSelect = document.getElementById('layout-select');
+      const centerGraphBtn = document.getElementById('center-graph-btn');
+      const codeModal = document.getElementById('code-modal');
+      const codeModalTitle = document.getElementById('code-modal-title');
+      const codeViewer = document.getElementById('code-viewer');
+      const closeCodeModalBtn = document.getElementById('close-code-modal');
+      const contextMenu = document.getElementById('context-menu');
+      const contextViewFile = document.getElementById('context-view-file');
+      const contextFocusNode = document.getElementById('context-focus-node');
       
-      // Create chart
-      new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{
-            label: 'Revenue',
-            data: [12, 19, 3, 5, 2, 3, 15],
-            borderColor: '#8B5CF6',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
+      // Color pickers
+      const fileNodeColor = document.getElementById('file-node-color');
+      const functionNodeColor = document.getElementById('function-node-color');
+      const variableNodeColor = document.getElementById('variable-node-color');
+      const classNodeColor = document.getElementById('class-node-color');
+      const callsEdgeColor = document.getElementById('calls-edge-color');
+      const importsEdgeColor = document.getElementById('imports-edge-color');
+      const extendsEdgeColor = document.getElementById('extends-edge-color');
+      
+      // Application state
+      let files = []; // All files in the codebase
+      let fileContents = {}; // Contents of each file
+      let dependencies = []; // Dependencies between files and code entities
+      let network = null; // vis.js network instance
+      let nodes = new vis.DataSet(); // Network nodes
+      let edges = new vis.DataSet(); // Network edges
+      let selectedNode = null; // Currently selected node
+      
+      // File type icons mapping
+      const fileIcons = {
+        js: 'bi-filetype-js',
+        jsx: 'bi-filetype-jsx',
+        ts: 'bi-filetype-tsx',
+        tsx: 'bi-filetype-tsx',
+        html: 'bi-filetype-html',
+        css: 'bi-filetype-css',
+        json: 'bi-filetype-json',
+        md: 'bi-markdown',
+        py: 'bi-filetype-py',
+        java: 'bi-filetype-java',
+        c: 'bi-file-code',
+        cpp: 'bi-file-code',
+        rb: 'bi-gem',
+        php: 'bi-filetype-php',
+        go: 'bi-file-code',
+        rust: 'bi-file-code',
+        default: 'bi-file-text'
+      };
+      
+      // Initialize the network graph
+      function initializeGraph() {
+        const container = document.getElementById('network-graph');
+        
+        // Create a network instance
+        const options = {
+          nodes: {
+            shape: 'dot',
+            size: 16,
+            font: {
+              size: 12,
+              face: 'sans-serif'
             }
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
+          edges: {
+            width: 1,
+            arrows: {
+              to: { enabled: true, scaleFactor: 0.5 }
             },
-            x: {
-              grid: {
-                display: false
-              }
+            smooth: {
+              type: 'cubicBezier',
+              forceDirection: 'horizontal',
+              roundness: 0.4
             }
+          },
+          physics: {
+            enabled: true,
+            solver: 'forceAtlas2Based',
+            stabilization: {
+              iterations: 200
+            }
+          },
+          interaction: {
+            hover: true,
+            tooltipDelay: 300,
+            zoomView: true,
+            dragView: true,
+            navigationButtons: true,
+            keyboard: {
+              enabled: true,
+              bindToWindow: false
+            }
+          },
+          layout: {
+            improvedLayout: true
           }
-        }
-      });
-      
-      // Handle chart period change
-      document.getElementById('chartPeriod').addEventListener('change', function() {
-        // In a real app, this would fetch new data based on selection
-        showToast('Chart Updated', `Showing data for ${this.value}`, 'info');
-      });
-    }
-    
-    // Initialize Calendar
-    function initializeCalendar() {
-      const calendarGrid = document.getElementById('calendarGrid');
-      const currentMonthElem = document.getElementById('currentMonth');
-      const prevMonthBtn = document.getElementById('prevMonth');
-      const nextMonthBtn = document.getElementById('nextMonth');
-      
-      // Get current date
-      let currentDate = new Date();
-      let currentMonth = currentDate.getMonth();
-      let currentYear = currentDate.getFullYear();
-      
-      // Render calendar initially
-      renderCalendar(currentMonth, currentYear);
-      
-      // Update month name
-      function updateMonthName(month, year) {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                            'July', 'August', 'September', 'October', 'November', 'December'];
-        currentMonthElem.textContent = `${monthNames[month]} ${year}`;
-      }
-      
-      // Render calendar
-      function renderCalendar(month, year) {
-        // Clear existing calendar
-        calendarGrid.innerHTML = '';
+        };
         
-        // Add day of week headers
-        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        daysOfWeek.forEach(day => {
-          const dayHeader = document.createElement('div');
-          dayHeader.className = 'calendar-day font-weight-bold';
-          dayHeader.textContent = day;
-          calendarGrid.appendChild(dayHeader);
+        // Create the network visualization
+        network = new vis.Network(container, { nodes, edges }, options);
+        
+        // Network event listeners
+        network.on('click', function(params) {
+          if (params.nodes.length > 0) {
+            selectedNode = params.nodes[0];
+          } else {
+            selectedNode = null;
+          }
         });
         
-        // Get first day of month and total days
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        network.on('doubleClick', function(params) {
+          if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            const node = nodes.get(nodeId);
+            
+            if (node.type === 'file' && node.content) {
+              openCodeViewer(node.label, node.content);
+            }
+          }
+        });
         
-        // Add empty cells for days before start of month
-        for (let i = 0; i < firstDay; i++) {
-          const emptyDay = document.createElement('div');
-          emptyDay.className = 'calendar-day';
-          calendarGrid.appendChild(emptyDay);
+        network.on('oncontext', function(params) {
+          params.event.preventDefault();
+          
+          if (params.nodes.length > 0) {
+            selectedNode = params.nodes[0];
+            
+            const node = nodes.get(selectedNode);
+            
+            // Show context menu
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = params.event.clientX + 'px';
+            contextMenu.style.top = params.event.clientY + 'px';
+            
+            // Enable/disable menu items based on node type
+            if (node.type === 'file' && node.content) {
+              contextViewFile.style.display = 'block';
+            } else {
+              contextViewFile.style.display = 'none';
+            }
+          }
+        });
+      }
+      
+      // Initialize event listeners
+      function initializeEventListeners() {
+        // Open file input when the browse button is clicked
+        selectFolderBtn.addEventListener('click', function() {
+          folderInput.click();
+        });
+        
+        // Handle folder selection
+        folderInput.addEventListener('change', function(event) {
+          const selectedFiles = event.target.files;
+          
+          if (selectedFiles.length > 0) {
+            showProgressOverlay();
+            
+            // Check if it's a large codebase
+            const totalSize = Array.from(selectedFiles).reduce((total, file) => total + file.size, 0);
+            if (totalSize > 100 * 1024 * 1024) { // 100MB threshold for warning
+              performanceWarning.style.display = 'block';
+              setTimeout(() => {
+                performanceWarning.style.display = 'none';
+              }, 5000);
+            }
+            
+            // Process files in chunks for better performance
+            setTimeout(() => {
+              processFiles(selectedFiles);
+            }, 100);
+          }
+        });
+        
+        // Export dependencies as CSV
+        exportCsvBtn.addEventListener('click', function() {
+          exportDependenciesCSV();
+        });
+        
+        // Center the graph
+        centerGraphBtn.addEventListener('click', function() {
+          if (network) {
+            network.fit({
+              animation: {
+                duration: 800,
+                easingFunction: 'easeInOutQuad'
+              }
+            });
+          }
+        });
+        
+        // Change graph layout
+        layoutSelect.addEventListener('change', function() {
+          const layout = layoutSelect.value;
+          updateGraphLayout(layout);
+        });
+        
+        // Update node and edge colors
+        fileNodeColor.addEventListener('change', updateGraphColors);
+        functionNodeColor.addEventListener('change', updateGraphColors);
+        variableNodeColor.addEventListener('change', updateGraphColors);
+        classNodeColor.addEventListener('change', updateGraphColors);
+        callsEdgeColor.addEventListener('change', updateGraphColors);
+        importsEdgeColor.addEventListener('change', updateGraphColors);
+        extendsEdgeColor.addEventListener('change', updateGraphColors);
+        
+        // Close code viewer modal
+        closeCodeModalBtn.addEventListener('click', function() {
+          codeModal.style.display = 'none';
+        });
+        
+        // Context menu items
+        contextViewFile.addEventListener('click', function() {
+          if (selectedNode) {
+            const node = nodes.get(selectedNode);
+            if (node.type === 'file' && node.content) {
+              openCodeViewer(node.label, node.content);
+            }
+          }
+          hideContextMenu();
+        });
+        
+        contextFocusNode.addEventListener('click', function() {
+          if (selectedNode) {
+            focusOnNodeDependencies(selectedNode);
+          }
+          hideContextMenu();
+        });
+        
+        // Hide context menu when clicking elsewhere
+        document.addEventListener('click', function() {
+          hideContextMenu();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+          if (network) {
+            network.redraw();
+          }
+        });
+      }
+      
+      // Process files from the selected folder
+      function processFiles(fileList) {
+        files = Array.from(fileList);
+        fileContents = {};
+        dependencies = [];
+        
+        const totalFiles = files.length;
+        let processedFiles = 0;
+        
+        // Update progress
+        function updateProgress() {
+          const progress = Math.round((processedFiles / totalFiles) * 100);
+          progressBar.style.width = progress + '%';
+          progressText.innerText = `Processing files: ${processedFiles}/${totalFiles}`;
         }
         
-        // Add days of the month
-        const today = new Date();
-        for (let i = 1; i <= daysInMonth; i++) {
-          const dayElem = document.createElement('div');
-          dayElem.className = 'calendar-day';
-          dayElem.textContent = i;
+        // Step 1: Read file contents
+        const readPromises = files.map(file => {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+              const content = e.target.result;
+              const relativePath = file.webkitRelativePath || file.name;
+              
+              fileContents[relativePath] = content;
+              processedFiles++;
+              updateProgress();
+              
+              resolve({
+                path: relativePath,
+                content: content,
+                size: file.size
+              });
+            };
+            
+            reader.onerror = function() {
+              processedFiles++;
+              updateProgress();
+              
+              resolve({
+                path: file.webkitRelativePath || file.name,
+                content: null,
+                size: file.size,
+                error: true
+              });
+            };
+            
+            reader.readAsText(file);
+          });
+        });
+        
+        // Execute all read operations
+        Promise.all(readPromises).then(results => {
+          // Update progress status
+          progressText.innerText = 'Building file tree...';
           
-          // Highlight today
-          if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-            dayElem.classList.add('today');
+          // Build file tree
+          buildFileTree(results);
+          
+          // Update progress status
+          progressText.innerText = 'Analyzing dependencies...';
+          
+          // Analyze dependencies
+          setTimeout(() => {
+            analyzeDependencies(results);
+            
+            // Build graph
+            progressText.innerText = 'Building network graph...';
+            setTimeout(() => {
+              buildNetworkGraph();
+              
+              // Hide progress overlay
+              hideProgressOverlay();
+              
+              // Show success message
+              showToast('Success', `Loaded ${totalFiles} files from the codebase`, 'success');
+            }, 100);
+          }, 100);
+        });
+      }
+      
+      // Build file tree UI
+      function buildFileTree(files) {
+        // Create a tree structure
+        const tree = {};
+        
+        files.forEach(file => {
+          const pathParts = file.path.split('/');
+          let currentLevel = tree;
+          
+          // Build tree structure
+          for (let i = 0; i < pathParts.length; i++) {
+            const part = pathParts[i];
+            
+            if (i === pathParts.length - 1) {
+              // It's a file
+              currentLevel[part] = {
+                type: 'file',
+                path: file.path,
+                size: file.size,
+                error: file.error || false
+              };
+            } else {
+              // It's a directory
+              if (!currentLevel[part]) {
+                currentLevel[part] = {
+                  type: 'directory',
+                  children: {}
+                };
+              }
+              currentLevel = currentLevel[part].children;
+            }
+          }
+        });
+        
+        // Clear the current tree
+        fileTreeContainer.innerHTML = '';
+        
+        // Build the HTML for the tree
+        const rootUl = document.createElement('ul');
+        rootUl.className = 'file-tree';
+        
+        buildTreeHtml(tree, rootUl);
+        
+        fileTreeContainer.appendChild(rootUl);
+      }
+      
+      // Build HTML for the file tree
+      function buildTreeHtml(node, parentElement) {
+        Object.keys(node).sort((a, b) => {
+          // Sort directories first
+          const nodeA = node[a];
+          const nodeB = node[b];
+          
+          if (nodeA.type === 'directory' && nodeB.type !== 'directory') {
+            return -1;
+          }
+          if (nodeA.type !== 'directory' && nodeB.type === 'directory') {
+            return 1;
           }
           
-          // Add click event
-          dayElem.addEventListener('click', function() {
-            showToast('Date Selected', `You selected ${i} ${currentMonthElem.textContent}`, 'info');
+          return a.localeCompare(b);
+        }).forEach(key => {
+          const item = node[key];
+          const li = document.createElement('li');
+          
+          if (item.type === 'directory') {
+            li.className = 'file-tree-item collapsed';
+            
+            const itemContent = document.createElement('div');
+            itemContent.className = 'd-flex align-items-center';
+            
+            const expandIcon = document.createElement('i');
+            expandIcon.className = 'bi bi-chevron-down expandable';
+            itemContent.appendChild(expandIcon);
+            
+            const folderIcon = document.createElement('i');
+            folderIcon.className = 'bi bi-folder folder-icon file-icon';
+            itemContent.appendChild(folderIcon);
+            
+            const label = document.createElement('span');
+            label.textContent = key;
+            itemContent.appendChild(label);
+            
+            li.appendChild(itemContent);
+            
+            // Add children
+            const childrenUl = document.createElement('ul');
+            childrenUl.style.display = 'none';
+            buildTreeHtml(item.children, childrenUl);
+            li.appendChild(childrenUl);
+            
+            // Toggle expand/collapse
+            itemContent.addEventListener('click', function() {
+              li.classList.toggle('collapsed');
+              childrenUl.style.display = li.classList.contains('collapsed') ? 'none' : 'block';
+              
+              // Change folder icon
+              folderIcon.className = li.classList.contains('collapsed') 
+                ? 'bi bi-folder folder-icon file-icon' 
+                : 'bi bi-folder2-open folder-icon file-icon';
+              
+              // Change expand icon
+              expandIcon.style.transform = li.classList.contains('collapsed') ? 'rotate(-90deg)' : '';
+            });
+            
+          } else {
+            // It's a file
+            li.className = 'file-tree-item';
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'd-flex align-items-center';
+            
+            // Add empty space where the expand icon would be
+            const emptyExpand = document.createElement('div');
+            emptyExpand.className = 'expandable';
+            itemDiv.appendChild(emptyExpand);
+            
+            // File icon based on extension
+            const fileIcon = document.createElement('i');
+            const extension = key.split('.').pop().toLowerCase();
+            fileIcon.className = `bi ${fileIcons[extension] || fileIcons.default} file-icon-default file-icon`;
+            itemDiv.appendChild(fileIcon);
+            
+            const label = document.createElement('span');
+            label.textContent = key;
+            itemDiv.appendChild(label);
+            
+            li.appendChild(itemDiv);
+            
+            // Handle file click
+            li.addEventListener('click', function() {
+              // Remove selected class from all file items
+              const fileItems = document.querySelectorAll('.file-tree-item');
+              fileItems.forEach(item => item.classList.remove('selected'));
+              
+              // Add selected class to this item
+              li.classList.add('selected');
+              
+              // If file content is available, highlight corresponding node
+              if (fileContents[item.path]) {
+                // Find and highlight the corresponding node in the graph
+                const fileNodes = nodes.get({
+                  filter: node => node.type === 'file' && node.path === item.path
+                });
+                
+                if (fileNodes.length > 0) {
+                  const fileNodeId = fileNodes[0].id;
+                  network.selectNodes([fileNodeId]);
+                  network.focus(fileNodeId, {
+                    scale: 1.0,
+                    animation: true
+                  });
+                }
+              }
+              
+              // Open file content if available
+              if (fileContents[item.path]) {
+                openCodeViewer(key, fileContents[item.path]);
+              }
+            });
+          }
+          
+          parentElement.appendChild(li);
+        });
+      }
+      
+      // Analyze code dependencies
+      function analyzeDependencies(files) {
+        dependencies = [];
+        
+        // Process each file to find dependencies
+        files.forEach(file => {
+          if (!file.content || file.error) return;
+          
+          const filePath = file.path;
+          const extension = filePath.split('.').pop().toLowerCase();
+          
+          // Focus on common web development file types
+          if (['js', 'jsx', 'ts', 'tsx', 'html', 'css', 'vue', 'py', 'java', 'php', 'rb', 'go', 'c', 'cpp'].includes(extension)) {
+            // JavaScript/TypeScript analysis using Acorn
+            if (['js', 'jsx', 'ts', 'tsx'].includes(extension)) {
+              try {
+                analyzeJavaScript(filePath, file.content);
+              } catch (e) {
+                console.warn(`Error parsing ${filePath}:`, e);
+              }
+            }
+            
+            // HTML analysis
+            else if (extension === 'html') {
+              analyzeHTML(filePath, file.content);
+            }
+            
+            // CSS analysis
+            else if (extension === 'css') {
+              analyzeCSS(filePath, file.content);
+            }
+            
+            // Simple text-based analysis for other file types
+            else {
+              analyzeGenericCode(filePath, file.content);
+            }
+          }
+        });
+      }
+      
+      // JavaScript/TypeScript analysis using Acorn
+      function analyzeJavaScript(filePath, content) {
+        try {
+          // Try to parse the JavaScript code
+          const ast = acorn.parse(content, {
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+            locations: true
           });
           
-          calendarGrid.appendChild(dayElem);
+          // Extract imports/requires
+          acorn.walk.simple(ast, {
+            ImportDeclaration(node) {
+              const source = node.source.value;
+              dependencies.push({
+                source: filePath,
+                target: resolveImportPath(filePath, source),
+                type: 'imports',
+                sourceType: 'file',
+                targetType: 'file'
+              });
+              
+              // Track what specific identifiers were imported
+              node.specifiers.forEach(specifier => {
+                if (specifier.type === 'ImportSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
+                  const importedName = specifier.imported ? specifier.imported.name : specifier.local.name;
+                  
+                  dependencies.push({
+                    source: `${filePath}:${specifier.local.name}`,
+                    target: `${resolveImportPath(filePath, source)}:${importedName}`,
+                    type: 'imports',
+                    sourceType: 'variable',
+                    targetType: 'variable'
+                  });
+                }
+              });
+            },
+            
+            CallExpression(node) {
+              // Handle require() calls
+              if (node.callee.type === 'Identifier' && node.callee.name === 'require' && node.arguments.length) {
+                if (node.arguments[0].type === 'Literal') {
+                  const source = node.arguments[0].value;
+                  
+                  dependencies.push({
+                    source: filePath,
+                    target: resolveImportPath(filePath, source),
+                    type: 'imports',
+                    sourceType: 'file',
+                    targetType: 'file'
+                  });
+                }
+              }
+              // Track function calls
+              else if (node.callee.type === 'Identifier') {
+                const functionName = node.callee.name;
+                
+                // Add a dependency from the current file to the function
+                dependencies.push({
+                  source: filePath,
+                  target: `${filePath}:${functionName}`,
+                  type: 'calls',
+                  sourceType: 'file',
+                  targetType: 'function'
+                });
+              }
+            },
+            
+            FunctionDeclaration(node) {
+              if (node.id) {
+                const functionName = node.id.name;
+                
+                // Add function to dependencies
+                dependencies.push({
+                  source: `${filePath}:${functionName}`,
+                  target: filePath,
+                  type: 'declares',
+                  sourceType: 'function',
+                  targetType: 'file'
+                });
+                
+                // Analyze function parameters
+                node.params.forEach(param => {
+                  if (param.type === 'Identifier') {
+                    dependencies.push({
+                      source: `${filePath}:${functionName}`,
+                      target: `${filePath}:${param.name}`,
+                      type: 'uses',
+                      sourceType: 'function',
+                      targetType: 'variable'
+                    });
+                  }
+                });
+              }
+            },
+            
+            ClassDeclaration(node) {
+              if (node.id) {
+                const className = node.id.name;
+                
+                // Add class to dependencies
+                dependencies.push({
+                  source: `${filePath}:${className}`,
+                  target: filePath,
+                  type: 'declares',
+                  sourceType: 'class',
+                  targetType: 'file'
+                });
+                
+                // Check for class extension
+                if (node.superClass) {
+                  if (node.superClass.type === 'Identifier') {
+                    dependencies.push({
+                      source: `${filePath}:${className}`,
+                      target: `${filePath}:${node.superClass.name}`,
+                      type: 'extends',
+                      sourceType: 'class',
+                      targetType: 'class'
+                    });
+                  }
+                }
+              }
+            },
+            
+            VariableDeclarator(node) {
+              if (node.id.type === 'Identifier') {
+                const varName = node.id.name;
+                
+                // Add variable to dependencies
+                dependencies.push({
+                  source: `${filePath}:${varName}`,
+                  target: filePath,
+                  type: 'declares',
+                  sourceType: 'variable',
+                  targetType: 'file'
+                });
+              }
+            }
+          });
+          
+        } catch (e) {
+          // Fallback to simpler analysis if parsing fails
+          analyzeGenericCode(filePath, content);
         }
-        
-        // Update month name
-        updateMonthName(month, year);
       }
       
-      // Previous month button
-      prevMonthBtn.addEventListener('click', function() {
-        currentMonth--;
-        if (currentMonth < 0) {
-          currentMonth = 11;
-          currentYear--;
+      // Simple HTML analysis
+      function analyzeHTML(filePath, content) {
+        // Extract script and link tags
+        const scriptRegex = /<script\s+(?:[^>]*?src\s*=\s*['"]([^'"]+)['"])?[^>]*>/g;
+        const linkRegex = /<link\s+(?:[^>]*?href\s*=\s*['"]([^'"]+)['"])(?:[^>]*?rel\s*=\s*['"]stylesheet['"])?[^>]*>/g;
+        
+        let match;
+        
+        // Find scripts
+        while ((match = scriptRegex.exec(content)) !== null) {
+          if (match[1]) {
+            dependencies.push({
+              source: filePath,
+              target: resolveImportPath(filePath, match[1]),
+              type: 'imports',
+              sourceType: 'file',
+              targetType: 'file'
+            });
+          }
         }
-        renderCalendar(currentMonth, currentYear);
-      });
-      
-      // Next month button
-      nextMonthBtn.addEventListener('click', function() {
-        currentMonth++;
-        if (currentMonth > 11) {
-          currentMonth = 0;
-          currentYear++;
+        
+        // Find stylesheets
+        while ((match = linkRegex.exec(content)) !== null) {
+          if (match[1] && content.includes('stylesheet')) {
+            dependencies.push({
+              source: filePath,
+              target: resolveImportPath(filePath, match[1]),
+              type: 'imports',
+              sourceType: 'file',
+              targetType: 'file'
+            });
+          }
         }
-        renderCalendar(currentMonth, currentYear);
-      });
-    }
-    
-    // Toast notification function
-    function showToast(title, message, type = 'success') {
-      const toastContainer = document.getElementById('toastContainer');
-      
-      // Create toast element
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      
-      // Add toast header
-      const toastHeader = document.createElement('div');
-      toastHeader.className = 'toast-header';
-      
-      // Toast title with icon
-      const toastTitle = document.createElement('div');
-      toastTitle.className = 'toast-title';
-      
-      // Add appropriate icon based on type
-      let iconClass;
-      switch(type) {
-        case 'success':
-          iconClass = 'bi-check-circle-fill text-success';
-          break;
-        case 'error':
-          iconClass = 'bi-exclamation-circle-fill text-danger';
-          break;
-        case 'info':
-          iconClass = 'bi-info-circle-fill text-primary';
-          break;
-        case 'warning':
-          iconClass = 'bi-exclamation-triangle-fill text-warning';
-          break;
-        default:
-          iconClass = 'bi-bell-fill text-primary';
+        
+        // Extract IDs and classes for potential JavaScript references
+        const idRegex = /id\s*=\s*['"]([^'"]+)['"]/g;
+        while ((match = idRegex.exec(content)) !== null) {
+          dependencies.push({
+            source: `${filePath}:#${match[1]}`,
+            target: filePath,
+            type: 'declares',
+            sourceType: 'element',
+            targetType: 'file'
+          });
+        }
       }
       
-      toastTitle.innerHTML = `<i class="bi ${iconClass} me-2"></i>${title}`;
-      toastHeader.appendChild(toastTitle);
-      
-      // Close button
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'toast-close';
-      closeBtn.innerHTML = '<i class="bi bi-x"></i>';
-      closeBtn.addEventListener('click', function() {
-        toast.remove();
-      });
-      toastHeader.appendChild(closeBtn);
-      
-      toast.appendChild(toastHeader);
-      
-      // Add toast message
-      const toastBody = document.createElement('div');
-      toastBody.className = 'toast-body';
-      toastBody.textContent = message;
-      toast.appendChild(toastBody);
-      
-      // Add to container
-      toastContainer.appendChild(toast);
-      
-      // Auto dismiss after 5 seconds
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.5s';
+      // Simple CSS analysis
+      function analyzeCSS(filePath, content) {
+        // Extract CSS imports
+        const importRegex = /@import\s+(?:url\(['"]?([^'")]+)['"]?\)|['"]([^'"]+)['"])/g;
         
+        let match;
+        while ((match = importRegex.exec(content)) !== null) {
+          const importPath = match[1] || match[2];
+          dependencies.push({
+            source: filePath,
+            target: resolveImportPath(filePath, importPath),
+            type: 'imports',
+            sourceType: 'file',
+            targetType: 'file'
+          });
+        }
+        
+        // Extract selectors (classes and IDs)
+        const selectorRegex = /(?:\.|#)([a-zA-Z0-9_-]+)/g;
+        const uniqueSelectors = new Set();
+        
+        while ((match = selectorRegex.exec(content)) !== null) {
+          const selector = match[0].startsWith('.') ? `.${match[1]}` : `#${match[1]}`;
+          
+          if (!uniqueSelectors.has(selector)) {
+            uniqueSelectors.add(selector);
+            
+            dependencies.push({
+              source: `${filePath}:${selector}`,
+              target: filePath,
+              type: 'declares',
+              sourceType: 'selector',
+              targetType: 'file'
+            });
+          }
+        }
+      }
+      
+      // Generic code analysis for other languages
+      function analyzeGenericCode(filePath, content) {
+        // Function pattern for various languages
+        const functionRegex = /\b(?:function|def|func|fn|method|sub)\s+([a-zA-Z0-9_]+)\s*\(/g;
+        // Class pattern for various languages
+        const classRegex = /\b(?:class|interface|struct|type)\s+([a-zA-Z0-9_]+)(?:\s+(?:extends|implements|inherits)?\s+([a-zA-Z0-9_]+))?/g;
+        // Import pattern for various languages
+        const importRegex = /\b(?:import|include|require|using|include_once|require_once|load)\s+(?:['"<]([^'">\s]+)['">\s]|([a-zA-Z0-9_.\/]+))/g;
+        // Variable declarations
+        const varRegex = /\b(?:var|let|const|dim|private|public|protected|static)?\s+([a-zA-Z0-9_]+)\s*(?:=|:)\s*[^;,]+[;,]/g;
+        
+        let match;
+        
+        // Find functions
+        while ((match = functionRegex.exec(content)) !== null) {
+          const functionName = match[1];
+          
+          dependencies.push({
+            source: `${filePath}:${functionName}`,
+            target: filePath,
+            type: 'declares',
+            sourceType: 'function',
+            targetType: 'file'
+          });
+        }
+        
+        // Find classes and inheritance
+        while ((match = classRegex.exec(content)) !== null) {
+          const className = match[1];
+          const extendedClass = match[2];
+          
+          dependencies.push({
+            source: `${filePath}:${className}`,
+            target: filePath,
+            type: 'declares',
+            sourceType: 'class',
+            targetType: 'file'
+          });
+          
+          if (extendedClass) {
+            dependencies.push({
+              source: `${filePath}:${className}`,
+              target: `${filePath}:${extendedClass}`,
+              type: 'extends',
+              sourceType: 'class',
+              targetType: 'class'
+            });
+          }
+        }
+        
+        // Find imports
+        while ((match = importRegex.exec(content)) !== null) {
+          const importPath = match[1] || match[2];
+          
+          if (importPath) {
+            dependencies.push({
+              source: filePath,
+              target: resolveImportPath(filePath, importPath),
+              type: 'imports',
+              sourceType: 'file',
+              targetType: 'file'
+            });
+          }
+        }
+        
+        // Find variable declarations
+        while ((match = varRegex.exec(content)) !== null) {
+          const varName = match[1];
+          
+          dependencies.push({
+            source: `${filePath}:${varName}`,
+            target: filePath,
+            type: 'declares',
+            sourceType: 'variable',
+            targetType: 'file'
+          });
+        }
+      }
+      
+      // Resolve relative import paths
+      function resolveImportPath(currentPath, importPath) {
+        // Handle absolute paths or URLs
+        if (importPath.startsWith('/') || importPath.includes('://')) {
+          return importPath;
+        }
+        
+        // Split the current path into directories
+        const parts = currentPath.split('/');
+        parts.pop(); // Remove the file name
+        
+        // Handle relative paths
+        if (importPath.startsWith('./')) {
+          importPath = importPath.substring(2);
+        } else if (importPath.startsWith('../')) {
+          while (importPath.startsWith('../')) {
+            importPath = importPath.substring(3);
+            parts.pop();
+          }
+        }
+        
+        // Combine the path
+        return parts.length > 0 ? `${parts.join('/')}/${importPath}` : importPath;
+      }
+      
+      // Build network graph
+      function buildNetworkGraph() {
+        // Clear existing nodes and edges
+        nodes.clear();
+        edges.clear();
+        
+        const nodeMap = new Map();
+        const edgeMap = new Map();
+        
+        // First pass: Create file nodes
+        files.forEach(file => {
+          const filePath = file.webkitRelativePath || file.name;
+          const fileName = filePath.split('/').pop();
+          
+          // Create node for the file
+          const fileNode = {
+            id: filePath,
+            label: fileName,
+            title: filePath,
+            path: filePath,
+            type: 'file',
+            content: fileContents[filePath] || null,
+            color: {
+              background: fileNodeColor.value,
+              border: '#2563EB',
+              highlight: {
+                background: '#D1E9FF',
+                border: '#2563EB'
+              }
+            },
+            font: {
+              color: '#1F2937'
+            }
+          };
+          
+          nodeMap.set(filePath, fileNode);
+        });
+        
+        // Second pass: Create entity nodes (functions, classes, variables)
+        dependencies.forEach(dep => {
+          // Function, class, or variable nodes
+          if (dep.sourceType !== 'file' && !nodeMap.has(dep.source)) {
+            const parts = dep.source.split(':');
+            const filePath = parts[0];
+            const entityName = parts[1];
+            const entityType = dep.sourceType;
+            
+            let nodeColor;
+            switch (entityType) {
+              case 'function':
+                nodeColor = functionNodeColor.value;
+                break;
+              case 'class':
+                nodeColor = classNodeColor.value;
+                break;
+              case 'variable':
+                nodeColor = variableNodeColor.value;
+                break;
+              default:
+                nodeColor = '#A1A1AA';
+            }
+            
+            const entityNode = {
+              id: dep.source,
+              label: entityName,
+              title: `${entityType}: ${entityName}\nFile: ${filePath}`,
+              type: entityType,
+              filePath: filePath,
+              color: {
+                background: nodeColor,
+                border: '#6D28D9',
+                highlight: {
+                  background: '#EDE9FE',
+                  border: '#6D28D9'
+                }
+              },
+              font: {
+                color: '#1F2937'
+              },
+              size: 10 // Smaller than file nodes
+            };
+            
+            nodeMap.set(dep.source, entityNode);
+          }
+          
+          // Target entity nodes
+          if (dep.targetType !== 'file' && !nodeMap.has(dep.target)) {
+            const parts = dep.target.split(':');
+            const filePath = parts[0];
+            const entityName = parts[1];
+            const entityType = dep.targetType;
+            
+            let nodeColor;
+            switch (entityType) {
+              case 'function':
+                nodeColor = functionNodeColor.value;
+                break;
+              case 'class':
+                nodeColor = classNodeColor.value;
+                break;
+              case 'variable':
+                nodeColor = variableNodeColor.value;
+                break;
+              default:
+                nodeColor = '#A1A1AA';
+            }
+            
+            const entityNode = {
+              id: dep.target,
+              label: entityName,
+              title: `${entityType}: ${entityName}\nFile: ${filePath}`,
+              type: entityType,
+              filePath: filePath,
+              color: {
+                background: nodeColor,
+                border: '#6D28D9',
+                highlight: {
+                  background: '#EDE9FE',
+                  border: '#6D28D9'
+                }
+              },
+              font: {
+                color: '#1F2937'
+              },
+              size: 10
+            };
+            
+            nodeMap.set(dep.target, entityNode);
+          }
+        });
+        
+        // Third pass: Create edges between nodes
+        dependencies.forEach(dep => {
+          const sourceNode = nodeMap.get(dep.source);
+          const targetNode = nodeMap.get(dep.target);
+          
+          if (sourceNode && targetNode) {
+            const edgeId = `${dep.source}-${dep.target}-${dep.type}`;
+            
+            // Avoid duplicate edges
+            if (!edgeMap.has(edgeId)) {
+              let edgeColor;
+              switch (dep.type) {
+                case 'imports':
+                  edgeColor = importsEdgeColor.value;
+                  break;
+                case 'calls':
+                  edgeColor = callsEdgeColor.value;
+                  break;
+                case 'extends':
+                  edgeColor = extendsEdgeColor.value;
+                  break;
+                default:
+                  edgeColor = '#A1A1AA';
+              }
+              
+              const edge = {
+                id: edgeId,
+                from: dep.source,
+                to: dep.target,
+                title: `${dep.type}: ${sourceNode.label} → ${targetNode.label}`,
+                type: dep.type,
+                arrows: 'to',
+                color: {
+                  color: edgeColor,
+                  highlight: '#000000'
+                },
+                width: 1
+              };
+              
+              edgeMap.set(edgeId, edge);
+            }
+          }
+        });
+        
+        // Add nodes and edges to the network
+        nodes.add(Array.from(nodeMap.values()));
+        edges.add(Array.from(edgeMap.values()));
+        
+        // Apply initial layout
+        updateGraphLayout(layoutSelect.value);
+      }
+      
+      // Update graph layout
+      function updateGraphLayout(layout) {
+        if (!network) return;
+        
+        switch (layout) {
+          case 'hierarchical':
+            network.setOptions({
+              layout: {
+                hierarchical: {
+                  direction: 'LR',
+                  sortMethod: 'directed',
+                  nodeSpacing: 150,
+                  levelSeparation: 150
+                }
+              },
+              physics: {
+                enabled: false
+              }
+            });
+            break;
+            
+          case 'force':
+            network.setOptions({
+              layout: {
+                hierarchical: false
+              },
+              physics: {
+                enabled: true,
+                solver: 'forceAtlas2Based',
+                forceAtlas2Based: {
+                  gravitationalConstant: -50,
+                  centralGravity: 0.01,
+                  springLength: 100,
+                  springConstant: 0.08
+                },
+                stabilization: {
+                  iterations: 200
+                }
+              }
+            });
+            break;
+            
+          case 'radial':
+            network.setOptions({
+              layout: {
+                hierarchical: false
+              },
+              physics: {
+                enabled: true,
+                solver: 'repulsion',
+                repulsion: {
+                  nodeDistance: 200,
+                  centralGravity: 0.2,
+                  springLength: 200,
+                  springConstant: 0.05,
+                  damping: 0.09
+                },
+                stabilization: {
+                  iterations: 200
+                }
+              }
+            });
+            break;
+        }
+        
+        // Stabilize and fit the network
+        network.stabilize(100);
         setTimeout(() => {
-          toast.remove();
+          network.fit({
+            animation: {
+              duration: 1000,
+              easingFunction: 'easeInOutQuad'
+            }
+          });
         }, 500);
-      }, 5000);
-    }
+      }
+      
+      // Update graph colors
+      function updateGraphColors() {
+        const nodeUpdates = [];
+        const edgeUpdates = [];
+        
+        // Update node colors
+        const allNodes = nodes.get();
+        allNodes.forEach(node => {
+          let nodeColor;
+          
+          switch (node.type) {
+            case 'file':
+              nodeColor = fileNodeColor.value;
+              break;
+            case 'function':
+              nodeColor = functionNodeColor.value;
+              break;
+            case 'class':
+              nodeColor = classNodeColor.value;
+              break;
+            case 'variable':
+              nodeColor = variableNodeColor.value;
+              break;
+            default:
+              nodeColor = '#A1A1AA';
+          }
+          
+          nodeUpdates.push({
+            id: node.id,
+            color: {
+              ...node.color,
+              background: nodeColor
+            }
+          });
+        });
+        
+        // Update edge colors
+        const allEdges = edges.get();
+        allEdges.forEach(edge => {
+          let edgeColor;
+          
+          switch (edge.type) {
+            case 'imports':
+              edgeColor = importsEdgeColor.value;
+              break;
+            case 'calls':
+              edgeColor = callsEdgeColor.value;
+              break;
+            case 'extends':
+              edgeColor = extendsEdgeColor.value;
+              break;
+            default:
+              edgeColor = '#A1A1AA';
+          }
+          
+          edgeUpdates.push({
+            id: edge.id,
+            color: {
+              color: edgeColor,
+              highlight: '#000000'
+            }
+          });
+        });
+        
+        // Update the legend
+        updateLegend();
+        
+        // Apply updates
+        nodes.update(nodeUpdates);
+        edges.update(edgeUpdates);
+      }
+      
+      // Update the legend with current colors
+      function updateLegend() {
+        const legend = document.getElementById('graph-legend');
+        const legendItems = legend.querySelectorAll('.legend-item');
+        
+        legendItems.forEach(item => {
+          const colorDiv = item.querySelector('.legend-color');
+          const text = item.querySelector('span').textContent.toLowerCase();
+          
+          if (text === 'files') {
+            colorDiv.style.backgroundColor = fileNodeColor.value;
+          } else if (text === 'functions') {
+            colorDiv.style.backgroundColor = functionNodeColor.value;
+          } else if (text === 'variables') {
+            colorDiv.style.backgroundColor = variableNodeColor.value;
+          } else if (text === 'classes') {
+            colorDiv.style.backgroundColor = classNodeColor.value;
+          } else if (text.includes('calls')) {
+            colorDiv.style.backgroundColor = callsEdgeColor.value;
+          } else if (text.includes('import')) {
+            colorDiv.style.backgroundColor = importsEdgeColor.value;
+          } else if (text.includes('extends')) {
+            colorDiv.style.backgroundColor = extendsEdgeColor.value;
+          }
+        });
+      }
+      
+      // Focus on node dependencies
+      function focusOnNodeDependencies(nodeId) {
+        if (!network) return;
+        
+        const connectedNodes = new Set();
+        connectedNodes.add(nodeId);
+        
+        // Find connected edges
+        const allEdges = edges.get();
+        allEdges.forEach(edge => {
+          if (edge.from === nodeId || edge.to === nodeId) {
+            connectedNodes.add(edge.from);
+            connectedNodes.add(edge.to);
+          }
+        });
+        
+        // Select connected nodes
+        network.selectNodes(Array.from(connectedNodes));
+        
+        // Focus on the selection
+        network.fit({
+          nodes: Array.from(connectedNodes),
+          animation: {
+            duration: 1000,
+            easingFunction: 'easeInOutQuad'
+          }
+        });
+      }
+      
+      // Export dependencies as CSV
+      function exportDependenciesCSV() {
+        if (dependencies.length === 0) {
+          showToast('Error', 'No dependencies to export', 'error');
+          return;
+        }
+        
+        // Prepare CSV data
+        const csvData = [
+          ['Source', 'Target', 'Relationship Type', 'Source Type', 'Target Type']
+        ];
+        
+        dependencies.forEach(dep => {
+          csvData.push([
+            dep.source,
+            dep.target,
+            dep.type,
+            dep.sourceType,
+            dep.targetType
+          ]);
+        });
+        
+        // Generate CSV content
+        const csv = Papa.unparse(csvData);
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'codebase_dependencies.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        showToast('Success', 'Dependencies exported to CSV', 'success');
+      }
+      
+      // Open code viewer modal
+      function openCodeViewer(filename, content) {
+        codeModalTitle.textContent = filename;
+        codeViewer.textContent = content;
+        codeModal.style.display = 'flex';
+      }
+      
+      // Hide context menu
+      function hideContextMenu() {
+        contextMenu.style.display = 'none';
+      }
+      
+      // Show progress overlay
+      function showProgressOverlay() {
+        progressOverlay.style.display = 'flex';
+        progressBar.style.width = '0%';
+        progressText.innerText = 'Processing files...';
+      }
+      
+      // Hide progress overlay
+      function hideProgressOverlay() {
+        progressOverlay.style.display = 'none';
+      }
+      
+      // Show toast notification
+      function showToast(title, message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        
+        // Add border color based on type
+        switch (type) {
+          case 'success':
+            toast.style.borderLeftColor = '#10B981';
+            break;
+          case 'error':
+            toast.style.borderLeftColor = '#EF4444';
+            break;
+          case 'warning':
+            toast.style.borderLeftColor = '#F59E0B';
+            break;
+          case 'info':
+          default:
+            toast.style.borderLeftColor = '#3B82F6';
+            break;
+        }
+        
+        // Add toast header
+        const toastHeader = document.createElement('div');
+        toastHeader.className = 'toast-header';
+        
+        // Toast title with icon
+        const toastTitle = document.createElement('div');
+        toastTitle.className = 'toast-title';
+        
+        // Add appropriate icon based on type
+        let iconClass;
+        switch (type) {
+          case 'success':
+            iconClass = 'bi-check-circle-fill text-success';
+            break;
+          case 'error':
+            iconClass = 'bi-exclamation-circle-fill text-danger';
+            break;
+          case 'warning':
+            iconClass = 'bi-exclamation-triangle-fill text-warning';
+            break;
+          case 'info':
+          default:
+            iconClass = 'bi-info-circle-fill text-primary';
+            break;
+        }
+        
+        toastTitle.innerHTML = `<i class="bi ${iconClass} me-2"></i>${title}`;
+        toastHeader.appendChild(toastTitle);
+        
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '<i class="bi bi-x"></i>';
+        closeBtn.addEventListener('click', function() {
+          toast.remove();
+        });
+        toastHeader.appendChild(closeBtn);
+        
+        toast.appendChild(toastHeader);
+        
+        // Add toast message
+        const toastBody = document.createElement('div');
+        toastBody.className = 'toast-body';
+        toastBody.textContent = message;
+        toast.appendChild(toastBody);
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.5s';
+          
+          setTimeout(() => {
+            toast.remove();
+          }, 500);
+        }, 5000);
+      }
+      
+      // Initialize network and event listeners
+      initializeGraph();
+      initializeEventListeners();
+      
+      // Show welcome toast
+      setTimeout(() => {
+        showToast('Welcome', 'Select a folder to visualize your codebase', 'info');
+      }, 1000);
+    });
   </script>
 </body>
 </html>
