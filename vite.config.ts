@@ -12,15 +12,13 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      template: {
-        transformHtml: (html) => {
-          // Add the required Lovable script tag for the "Select" feature
-          return html.replace(
-            '<head>',
-            `<head>
+      transformHtml: (html: string) => {
+        // Add the required Lovable script tag for the "Select" feature
+        return html.replace(
+          '<head>',
+          `<head>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>`
-          );
-        },
+        );
       },
     }),
     mode === 'development' &&
