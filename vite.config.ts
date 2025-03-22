@@ -11,17 +11,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react({
-      plugins: [
-        // Remove the problematic filter configuration
-        // and simplify the transform function
-        {
-          transform(code: string, id: string) {
-            return code;
-          },
-        },
-      ],
-    }),
+    react(),
     {
       name: 'add-lovable-script',
       transformIndexHtml(html: string) {
@@ -34,7 +24,7 @@ export default defineConfig(({ mode }) => ({
       }
     },
     mode === 'development' && componentTagger(),
-  ].filter(Boolean),
+  ].filter(Boolean as any),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
