@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://kartikshankar-nyc.github.io/codebase-visualization-graph/
+**DEMO URL**: https://kartikshankar-nyc.github.io/codebase-visualization-graph/
 
 # Codebase Visualization Graph
 
