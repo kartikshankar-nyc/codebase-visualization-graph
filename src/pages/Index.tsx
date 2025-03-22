@@ -3,8 +3,14 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { CodeSquare, FileCode } from "lucide-react";
 import CodebaseGraphWithProvider from "@/components/CodebaseGraph";
+import UploadDialog from "@/components/UploadDialog";
 
 const Index = () => {
+  const handleFileSelected = (file: File) => {
+    console.log("File selected:", file);
+    // Process the file here
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
@@ -15,10 +21,15 @@ const Index = () => {
           </p>
         </div>
         <div className="flex gap-4">
-          <Button variant="outline" className="flex items-center gap-2">
-            <FileCode size={16} />
-            Export Graph
-          </Button>
+          <UploadDialog 
+            onFileSelected={handleFileSelected}
+            trigger={
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileCode size={16} />
+                Visualize Project
+              </Button>
+            }
+          />
           <Button variant="default" className="flex items-center gap-2">
             <CodeSquare size={16} />
             Analyze Code
