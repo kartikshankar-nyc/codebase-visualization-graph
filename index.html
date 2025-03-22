@@ -57,6 +57,13 @@
             background-color: #fff;
             border-right: 1px solid #ddd;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s ease-in-out;
+        }
+
+        .file-tree.collapsed {
+            width: 50px;
+            padding: 0;
+            overflow: hidden;
         }
 
         .graph-container {
@@ -174,6 +181,69 @@
             margin-right: 5px;
             margin-bottom: 5px;
         }
+
+        /* Collapse button styles */
+        .collapse-button {
+            position: absolute;
+            top: 50%;
+            left: 30%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: left 0.3s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .collapse-button.collapsed {
+            left: 50px;
+        }
+
+        .collapse-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .collapse-button i {
+            transition: transform 0.3s;
+        }
+
+        .collapse-button.collapsed i {
+            transform: rotate(180deg);
+        }
+
+        /* Collapsed tree styles */
+        .file-tree-collapsed-content {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+            height: 100%;
+        }
+
+        .file-tree.collapsed .file-tree-collapsed-content {
+            display: flex;
+        }
+
+        .file-tree.collapsed #fileTree {
+            display: none;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-align: center;
+            margin-top: 20px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -198,11 +268,21 @@
         </header>
 
         <main class="content">
-            <section class="file-tree" id="fileTree">
-                <div class="alert alert-info">
-                    Please select a folder to start visualization.
+            <section class="file-tree" id="fileTreeContainer">
+                <div id="fileTree">
+                    <div class="alert alert-info">
+                        Please select a folder to start visualization.
+                    </div>
+                </div>
+                <div class="file-tree-collapsed-content">
+                    <i class="bi bi-folder-fill" style="font-size: 24px; color: var(--secondary-color);"></i>
+                    <div class="vertical-text">File Tree</div>
                 </div>
             </section>
+            
+            <button id="collapseButton" class="collapse-button">
+                <i class="bi bi-chevron-left"></i>
+            </button>
 
             <section class="graph-container">
                 <div id="network-graph"></div>
@@ -285,6 +365,8 @@
         const browseButton = document.getElementById('browseButton');
         const folderInput = document.getElementById('folderInput');
         const fileTreeElement = document.getElementById('fileTree');
+        const fileTreeContainer = document.getElementById('fileTreeContainer');
+        const collapseButton = document.getElementById('collapseButton');
         const exportButton = document.getElementById('exportButton');
         const loadingOverlay = document.getElementById('loadingOverlay');
         const progressBar = document.getElementById('progressBar');
@@ -315,6 +397,9 @@
             folderInput.addEventListener('change', handleFolderSelection);
             exportButton.addEventListener('click', exportDependencies);
             
+            // File tree collapse functionality
+            collapseButton.addEventListener('click', toggleFileTree);
+            
             // Graph control event listeners
             nodeColorSelect.addEventListener('change', updateGraphStyle);
             linkColorSelect.addEventListener('change', updateGraphStyle);
@@ -325,6 +410,23 @@
             
             // Initialize an empty graph
             initializeGraph();
+        }
+        
+        // Toggle file tree collapsed state
+        function toggleFileTree() {
+            fileTreeContainer.classList.toggle('collapsed');
+            collapseButton.classList.toggle('collapsed');
+            
+            // Update simulation center after collapsing
+            if (simulation) {
+                simulation
+                    .force('center', d3.forceCenter(
+                        networkGraph.clientWidth / 2,
+                        networkGraph.clientHeight / 2
+                    ))
+                    .alpha(0.3)
+                    .restart();
+            }
         }
         
         // Handle folder selection from the input
