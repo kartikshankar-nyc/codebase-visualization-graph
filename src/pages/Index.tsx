@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
@@ -34,7 +33,6 @@ import {
   Layers,
   Code,
   Variable,
-  Function,
   Box,
 } from 'lucide-react';
 
@@ -866,8 +864,7 @@ const Index = () => {
                 ref={fileInputRef}
                 onChange={handleFolderSelect}
                 className="hidden"
-                directory=""
-                webkitdirectory=""
+                multiple
               />
               <button
                 className="text-sm py-1 px-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors flex items-center"
@@ -1078,13 +1075,13 @@ const Index = () => {
                     
                     <div className="grid grid-cols-3 gap-5 text-center">
                       <div className="p-4 rounded-lg bg-card border border-border">
-                        <Function size={20} className="mx-auto mb-2 text-primary" />
-                        <div className="text-sm font-medium">Functions</div>
+                        <Variable size={20} className="mx-auto mb-2 text-primary" />
+                        <div className="text-sm font-medium">Variables</div>
                       </div>
                       
                       <div className="p-4 rounded-lg bg-card border border-border">
-                        <Variable size={20} className="mx-auto mb-2 text-amber-500" />
-                        <div className="text-sm font-medium">Variables</div>
+                        <Code size={20} className="mx-auto mb-2 text-amber-500" />
+                        <div className="text-sm font-medium">Functions</div>
                       </div>
                       
                       <div className="p-4 rounded-lg bg-card border border-border">
