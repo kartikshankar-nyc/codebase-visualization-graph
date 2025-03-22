@@ -1,8 +1,8 @@
-# Welcome to your Lovable project
+# CODEBASE VISUALIZER (BETA)
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/55e10912-a5d6-4685-b900-c748a1bbfb82
+**URL**: https://codebase-visualization-graph.lovable.app/
 
 ## How can I edit this code?
 
