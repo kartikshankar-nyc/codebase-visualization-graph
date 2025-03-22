@@ -4,6 +4,18 @@
 
 **DEMO URL**: https://kartikshankar-nyc.github.io/codebase-visualization-graph/
 
+## Screenshots of the app in action
+![1](https://github.com/user-attachments/assets/74d33d99-ac03-4797-94cc-272aa83561a9) <br>
+![2](https://github.com/user-attachments/assets/96893d57-2967-42b7-816a-5749f81d6e06) <br>
+![3](https://github.com/user-attachments/assets/bb5989ad-d9a7-495f-be0d-7cd4f5304544) <br>
+![4](https://github.com/user-attachments/assets/19c24fa3-7e7c-4ac5-bd6a-97675a0c8453) <br>
+![5](https://github.com/user-attachments/assets/e73032b9-03c9-40e4-9018-c90daccc2fbe) <br>
+
+
+
+
+
+
 # Codebase Visualization Graph
 
 The "Codebase Visualization Graph" application is designed to visualize the structure and dependencies of your codebase. This guide will help you get started with using the application effectively.
@@ -106,4 +118,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 Feel free to reach out via the [GitHub Issues](https://github.com/kartikshankar-nyc/codebase-visualization-graph/issues) if you have any questions or need further assistance. Happy coding!
 ```
 
-You can now copy and paste this markdown content into your `README.md` file.
+
