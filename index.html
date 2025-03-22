@@ -115,6 +115,49 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             z-index: 10;
             width: 250px;
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        .controls.collapsed {
+            width: 42px;
+            height: 42px;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .controls-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+        }
+
+        .controls-toggle:hover {
+            color: var(--secondary-color);
+        }
+
+        .controls-content {
+            transition: opacity 0.3s ease;
+        }
+
+        .controls.collapsed .controls-content {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .controls.collapsed .controls-toggle i {
+            transform: rotate(180deg);
         }
 
         .control-group {
@@ -286,51 +329,58 @@
 
             <section class="graph-container">
                 <div id="network-graph"></div>
-                <div class="controls">
-                    <h5>Graph Controls</h5>
-                    <div class="control-group">
-                        <label for="nodeColorSelect" class="form-label">Node Color:</label>
-                        <select id="nodeColorSelect" class="form-select form-select-sm">
-                            <option value="#4361ee">Blue</option>
-                            <option value="#3a0ca3">Purple</option>
-                            <option value="#7209b7">Magenta</option>
-                            <option value="#f72585">Pink</option>
-                            <option value="#4cc9f0">Cyan</option>
-                            <option value="#480ca8">Deep Purple</option>
-                        </select>
+                <div class="controls" id="graphControls">
+                    <div class="controls-header">
+                        <h5 class="m-0">Graph Controls</h5>
+                        <button class="controls-toggle" id="controlsToggle">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
-                    <div class="control-group">
-                        <label for="linkColorSelect" class="form-label">Link Color:</label>
-                        <select id="linkColorSelect" class="form-select form-select-sm">
-                            <option value="#999">Gray</option>
-                            <option value="#000">Black</option>
-                            <option value="#4361ee">Blue</option>
-                            <option value="#3a0ca3">Purple</option>
-                            <option value="#7209b7">Magenta</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label for="nodeSize" class="form-label">Node Size: <span id="nodeSizeValue">10</span></label>
-                        <input type="range" class="form-range" id="nodeSize" min="5" max="20" value="10">
-                    </div>
-                    <div class="control-group">
-                        <button id="centerGraphBtn" class="btn btn-primary btn-sm">Center Graph</button>
-                        <button id="resetGraphBtn" class="btn btn-outline-secondary btn-sm ms-2">Reset</button>
-                    </div>
-                    <div class="control-group">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="showLabelsSwitch" checked>
-                            <label class="form-check-label" for="showLabelsSwitch">Show Labels</label>
+                    <div class="controls-content">
+                        <div class="control-group">
+                            <label for="nodeColorSelect" class="form-label">Node Color:</label>
+                            <select id="nodeColorSelect" class="form-select form-select-sm">
+                                <option value="#4361ee">Blue</option>
+                                <option value="#3a0ca3">Purple</option>
+                                <option value="#7209b7">Magenta</option>
+                                <option value="#f72585">Pink</option>
+                                <option value="#4cc9f0">Cyan</option>
+                                <option value="#480ca8">Deep Purple</option>
+                            </select>
                         </div>
-                    </div>
-                    <div id="dependencyTypes" class="mt-3">
-                        <h6>Dependency Types:</h6>
-                        <div class="dependency-legend">
-                            <span class="badge bg-primary">Calls</span>
-                            <span class="badge bg-success">Imports/Requires</span>
-                            <span class="badge bg-info">Extends/Inherits</span>
-                            <span class="badge bg-warning">References</span>
-                            <span class="badge bg-danger">Defines</span>
+                        <div class="control-group">
+                            <label for="linkColorSelect" class="form-label">Link Color:</label>
+                            <select id="linkColorSelect" class="form-select form-select-sm">
+                                <option value="#999">Gray</option>
+                                <option value="#000">Black</option>
+                                <option value="#4361ee">Blue</option>
+                                <option value="#3a0ca3">Purple</option>
+                                <option value="#7209b7">Magenta</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="nodeSize" class="form-label">Node Size: <span id="nodeSizeValue">10</span></label>
+                            <input type="range" class="form-range" id="nodeSize" min="5" max="20" value="10">
+                        </div>
+                        <div class="control-group">
+                            <button id="centerGraphBtn" class="btn btn-primary btn-sm">Center Graph</button>
+                            <button id="resetGraphBtn" class="btn btn-outline-secondary btn-sm ms-2">Reset</button>
+                        </div>
+                        <div class="control-group">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="showLabelsSwitch" checked>
+                                <label class="form-check-label" for="showLabelsSwitch">Show Labels</label>
+                            </div>
+                        </div>
+                        <div id="dependencyTypes" class="mt-3">
+                            <h6>Dependency Types:</h6>
+                            <div class="dependency-legend">
+                                <span class="badge bg-primary">Calls</span>
+                                <span class="badge bg-success">Imports/Requires</span>
+                                <span class="badge bg-info">Extends/Inherits</span>
+                                <span class="badge bg-warning">References</span>
+                                <span class="badge bg-danger">Defines</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -372,6 +422,8 @@
         const progressBar = document.getElementById('progressBar');
         const networkGraph = document.getElementById('network-graph');
         const tooltip = document.getElementById('tooltip');
+        const graphControls = document.getElementById('graphControls');
+        const controlsToggle = document.getElementById('controlsToggle');
         
         // Graph control elements
         const nodeColorSelect = document.getElementById('nodeColorSelect');
@@ -400,6 +452,9 @@
             // File tree collapse functionality
             collapseButton.addEventListener('click', toggleFileTree);
             
+            // Graph controls collapse functionality
+            controlsToggle.addEventListener('click', toggleGraphControls);
+            
             // Graph control event listeners
             nodeColorSelect.addEventListener('change', updateGraphStyle);
             linkColorSelect.addEventListener('change', updateGraphStyle);
@@ -410,6 +465,11 @@
             
             // Initialize an empty graph
             initializeGraph();
+        }
+        
+        // Toggle graph controls collapsed state
+        function toggleGraphControls() {
+            graphControls.classList.toggle('collapsed');
         }
         
         // Toggle file tree collapsed state
@@ -1314,7 +1374,7 @@
             graphConfig.nodeColor = nodeColorSelect.value;
             graphConfig.linkColor = linkColorSelect.value;
             
-            // Update nodes and links
+            // Apply colors immediately to graph elements
             d3.selectAll('.node')
                 .attr('fill', getNodeColor);
             
@@ -1324,6 +1384,11 @@
             // Update arrowhead color
             d3.select('#arrowhead path')
                 .attr('fill', graphConfig.linkColor);
+                
+            // Force a simulation restart to apply changes
+            if (simulation) {
+                simulation.alpha(0.1).restart();
+            }
         }
         
         // Update node size
